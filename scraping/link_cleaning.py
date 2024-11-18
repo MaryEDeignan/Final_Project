@@ -19,8 +19,8 @@ def write_cleaned_links_json(file_path, links):
 
 def main():
     # File paths
-    input_file = 'links/links_allrecipes.json'  # Your JSON file containing the links
-    output_file = 'links/cleaned_links_allrecipes.json'  # File to save cleaned links in JSON format
+    input_file = 'links/links.json'  # Your JSON file containing the links
+    output_file = 'links/cleaned_links.json'  # File to save cleaned links in JSON format
 
     # Step 1: Read JSON data
     data = read_links_json(input_file)
