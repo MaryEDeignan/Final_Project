@@ -34,6 +34,7 @@ If you prefer to scrape your own data instead of using the pre-scraped dataset p
    ```
 2. **Navigate to the Scraping Folder:** Go to the `scraping` directory inside the repository:
 	```python 
+	cd src
 	cd scraping 
 	```
 3. **Run the Scraper Script:** To scrape the recipes and their corresponding images, execute the `scraper.py` script:
