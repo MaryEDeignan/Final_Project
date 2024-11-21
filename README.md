@@ -4,6 +4,27 @@
 
 A more complete project description can be found...
 
+## Setting up Virtual Environment
+It is recommended to set up a virtual environment to ensure you have all of the needed packages. 
+The directions below work both for MacOS and Linux. 
+1. Navigate to your terminal and activate an environment named
+```python
+python3 -m venv recipes
+```
+2. Activate you environment
+```python
+source recipes/bin/activate
+```
+3. Once this enviornment is activated, run the following command to install the necessary depenencies as listed in the `requirements.txt` file.
+```python
+pip install -r requirements.txt
+```
+4. Deactivate the environemnt when you finish. When you are done working on this project, make sure you deactivate the virtual environment.
+```python
+deactivate
+```
+
+
 ## How to scrape your own data
 If you prefer to scrape your own data instead of using the pre-scraped dataset provided in this repository, follow these steps. Note that the whole scraping process can take 2+ hours. 
 1. **Clone the Repository:**  
