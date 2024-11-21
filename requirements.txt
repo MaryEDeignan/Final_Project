@@ -1,0 +1,12 @@
+requests
+tqdm
+parsel
+pandas
+html5lib
+nltk
+scikit-learn
+PyQt5
+transformers
+datasets
+torch
+evaluate
