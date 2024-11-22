@@ -79,7 +79,7 @@ class SwipeWindow(QMainWindow):
         self.update_card_text()
 
     def update_card_text(self):
-        """Update the card with current entry from dataframe, including the image from scraping/images folder."""
+        """Update the card with current entry from dataframe, including the image from src/scraping/images folder."""
         if self.current_index < len(self.dataframe):
             row = self.dataframe.iloc[self.current_index]
             
@@ -93,8 +93,8 @@ class SwipeWindow(QMainWindow):
 
             # Display image
             image_filename = row.get("image_filename", None)
-            if image_filename and os.path.exists(f"scraping/images/{image_filename}"):
-                pixmap = QPixmap(f"scraping/images/{image_filename}")
+            if image_filename and os.path.exists(f"srcscraping/images/{image_filename}"):
+                pixmap = QPixmap(f"src/scraping/images/{image_filename}")
                 self.image_label.setPixmap(pixmap.scaled(350, 400, 
                                                          Qt.KeepAspectRatioByExpanding, 
                                                          Qt.SmoothTransformation))  # Scale the image to fit
