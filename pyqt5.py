@@ -93,7 +93,7 @@ class SwipeWindow(QMainWindow):
 
             # Display image
             image_filename = row.get("image_filename", None)
-            if image_filename and os.path.exists(f"srcscraping/images/{image_filename}"):
+            if image_filename and os.path.exists(f"src/scraping/images/{image_filename}"):
                 pixmap = QPixmap(f"src/scraping/images/{image_filename}")
                 self.image_label.setPixmap(pixmap.scaled(350, 400, 
                                                          Qt.KeepAspectRatioByExpanding, 
