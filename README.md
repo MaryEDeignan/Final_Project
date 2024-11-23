@@ -7,11 +7,11 @@ A more complete project description can be found...
 ## Setting up Virtual Environment
 It is recommended to set up a virtual environment to ensure you have all of the needed packages. 
 The directions below work both for MacOS and Linux. 
-1. Navigate to your terminal and activate an environment named
+1. Navigate to your terminal and activate an environment using the code below. 
 ```python
 python3 -m venv recipes
 ```
-2. Activate you environment
+2. Activate your environment
 ```python
 source recipes/bin/activate
 ```
@@ -19,7 +19,7 @@ source recipes/bin/activate
 ```python
 pip install -r requirements.txt
 ```
-4. Deactivate the environemnt when you finish. When you are done working on this project, make sure you deactivate the virtual environment.
+4. Deactivate the environemnt when you finish working on this project. 
 ```python
 deactivate
 ```
@@ -41,13 +41,13 @@ If you prefer to scrape your own data instead of using the pre-scraped dataset p
 	```python
 	python3 scraper.py
 	```
-  This will scrape 10,000+ recipes from allrecipes.com along with their images.
+  This will scrape 10,000+ recipes from Allrecipes.com along with their images.
 
 5. **Saving and Using the Data:** Once the script completes, the recipe data will be saved in a JSON file located in `scraping/recipes` as `scraped_recipes.json`. The images will be saved in the `scraping/images` folder.  These images can be matched to their corresponding recipe using the image_filename field in `scraped_images.json`. Additionally, a .txt file will be created in the `scraping/links` folder. This file contains all the links to the scraped recipes along with the category each recipe belongs to.
 
 ## How to view and operate the Interface
 ### 1. **Running the Application**
-1. **Clone the Repository:**  *This step can be skipped if you scraped your own data*
+1. **Clone the Repository:**  *This step can be skipped if you just scraped your own data. Simply navigate to the cloned folder.*
    
    First, clone this repository to your local machine:
    ```python
@@ -60,7 +60,7 @@ If you prefer to scrape your own data instead of using the pre-scraped dataset p
 	This will start the application and open the interface in a new window.
 
 ### 2. **Interacting with the Interface**
-When the application launches, the interface will display recipe cards that you can swipe through. Each card contains information about a recipe, including its title, rating, total time, and an image.
+When the application launches, the interface will display recipe cards that you can swipe through. Each card contains information about a recipe, including its title, rating, total time, and an image. We are looking at adding additional information to the cards, as well adding a feauture that allows users to swipe up to see additional information. 
 #### Swipe Actions: - 
 - **Swipe Right**: Click and drag the card to the right to indicate you like the recipe. The recipes you like will be saved to `liked_recipes.csv` when you close out of the application. 
 - **Swipe Left**: Click and drag the card to the left to indicate you dislike the recipe. The recipes you dislike will be saved to `disliked_recipes.csv` when you close out of the application. 
