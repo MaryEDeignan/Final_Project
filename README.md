@@ -2,7 +2,7 @@
 
 ## Project Description
 
-A more complete project description can be found...  ADD WHERE THE PDF IS
+A more complete project description can be found  <a href="Al_and_Mary_Meal_Plan_Generator.pdf">here</a> (our project proposal).
 
 ## Setting up Virtual Environment
 It is recommended to set up a virtual environment to ensure you have all of the needed packages. 
@@ -45,7 +45,7 @@ If you prefer to scrape your own data instead of using the pre-scraped dataset p
 
 5. **Saving and Using the Data:** Once the script completes, the recipe data will be saved in a JSON file located in `scraping/recipes` as `scraped_recipes.json`. The images will be saved in the `scraping/images` folder.  These images can be matched to their corresponding recipe using the image_filename field in `scraped_images.json`. Additionally, a .txt file will be created in the `scraping/links` folder. This file contains all the links to the scraped recipes along with the category each recipe belongs to.
 
-## How to view and operate the Interface
+## How to view and operate the interface
 ### 1. **Running the Application**
 1. **Clone the Repository:**  *This step can be skipped if you just scraped your own data. Simply navigate to the cloned folder.*
    
@@ -67,6 +67,15 @@ When the application launches, the interface will display recipe cards that you 
 
 ### 3. **Exiting the Interface** 
 When you close the application, it will automatically save your liked and disliked recipes to the corresponding .csv files. If you want to manually save the data at any time, you can click the exit button, and the data will be exported to the specified CSV files. Currently, the data is overwritten every time you open the app and use it again.
+
+## Other files
+
+### `data_prep.ipynb`
+This file shows how we made all of our feature modifications. Some modifications are quite specific, so this process has not yet been automated. This jupyter notebook serves as a record of feature modifications.
+
+### `report.ipynb`
+This file is an initial exploration of some of our data, and avenues for measures of similarity.
+
 
 
 
