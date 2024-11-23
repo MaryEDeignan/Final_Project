@@ -2,7 +2,7 @@
 
 ## Project Description
 
-A more complete project description can be found...
+A more complete project description can be found...  ADD WHERE THE PDF IS
 
 ## Setting up Virtual Environment
 It is recommended to set up a virtual environment to ensure you have all of the needed packages. 
@@ -19,7 +19,7 @@ source recipes/bin/activate
 ```python
 pip install -r requirements.txt
 ```
-4. Deactivate the environemnt when you finish working on this project. 
+4. Deactivate the environment when you finish working on this project. 
 ```python
 deactivate
 ```
