@@ -55,7 +55,7 @@ If you prefer to scrape your own data instead of using the pre-scraped dataset p
    ``` 
 3. **Run the Application** Execute the Python script to launch the app:
 	```python 
-	python3 pyqt5.py
+	python3 interface.py
 	```
 	This will start the application and open the interface in a new window.
 
