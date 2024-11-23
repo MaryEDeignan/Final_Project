@@ -2,7 +2,7 @@
 
 ## Project Description
 
-A more complete project description can be found  <a href="Al_and_Mary_Meal_Plan_Generator.pdf">here</a> (our project proposal).
+A more complete project description can be found  <a href="docs/Al_and_Mary_Meal_Plan_Generator.pdf">here</a> (our project proposal).
 
 ## Setting up Virtual Environment
 It is recommended to set up a virtual environment to ensure you have all of the needed packages. 
@@ -68,7 +68,8 @@ When the application launches, the interface will display recipe cards that you 
 ### 3. **Exiting the Interface** 
 When you close the application, it will automatically save your liked and disliked recipes to the corresponding .csv files. If you want to manually save the data at any time, you can click the exit button, and the data will be exported to the specified CSV files. Currently, the data is overwritten every time you open the app and use it again.
 
-## Other files
+## Files in the `useful_notebooks` folder
+This folder serves as a record of some of the work we've done in the past, that either has not yet been automated or should not be automated.
 
 ### `data_prep.ipynb`
 This file shows how we made all of our feature modifications. Some modifications are quite specific, so this process has not yet been automated. This jupyter notebook serves as a record of feature modifications.
