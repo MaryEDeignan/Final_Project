@@ -1,4 +1,4 @@
-# Final_Project
+# Recipe Swiper
 
 ## Project Description
 
