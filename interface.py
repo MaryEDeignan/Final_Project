@@ -1,6 +1,10 @@
 import sys
 import pandas as pd
 import os
+import platform
+import subprocess
+if platform.system() == "Windows":
+    import winreg
 from PyQt5.QtCore import Qt, QPoint, QPropertyAnimation
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (
@@ -11,6 +15,57 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
 )
+
+# Define light and dark themes
+LIGHT_THEME = """
+    QWidget {
+        background-color: #FFFFFF;
+        color: #000000;
+    }
+    QLabel {
+        font-size: 16px;
+    }
+"""
+
+DARK_THEME = """
+    QWidget {
+        background-color: #2D2D2D; /* Main background is dark grey */
+        color: #FFFFFF;           /* Text color is white */
+    }
+    QLabel {
+        font-size: 16px;
+        color: #FFFFFF;           /* Text color to white */
+    }
+    QWidget#card {
+        background-color: #2D2D2D; /* Card background is dark grey */
+        border-radius: 10px;
+        color: #FFFFFF;           /* Card text is white */
+    }
+"""
+
+def is_dark_mode():
+    if platform.system() == "Darwin":  # macOS
+        result = subprocess.run(
+            ["defaults", "read", "-g", "AppleInterfaceStyle"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        return result.returncode == 0  # Returns 0 if dark mode is enabled
+    elif platform.system() == "Windows":
+        try:
+            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize")
+            value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
+            return value == 0  
+        except FileNotFoundError:
+            return False
+    return False
+
+def apply_theme(app):
+    if is_dark_mode():
+        app.setStyleSheet(DARK_THEME)
+    else:
+        app.setStyleSheet(LIGHT_THEME)
 
 class SwipeWindow(QMainWindow):
     def __init__(self, dataframe):
@@ -35,7 +90,8 @@ class SwipeWindow(QMainWindow):
 
         # Create card widget that will display recipe information
         self.card = QWidget(self)
-        self.card.setStyleSheet("background-color: white; border-radius: 10px;")
+        self.card.setObjectName("card")  # Add this line to name the card widget
+        self.card.setStyleSheet("border-radius: 10px;")  # Keep border styling
         self.card_layout = QVBoxLayout(self.card)
         self.card_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -200,11 +256,15 @@ if __name__ == "__main__":
     # Load dataframe from csv file
     df = pd.read_csv('data/recipe_data.csv')
 
-    # Make sure file has the required columns
+    # Validate required columns
     if not all(col in df.columns for col in ["title", "rating", "total_time", "image_filename"]):
         raise ValueError("CSV file must have columns: 'title', 'rating', 'total_time', and 'image_filename'")
 
     app = QApplication(sys.argv)
+
+    # Apply light or dark theme based on system settings
+    apply_theme(app)
+
     window = SwipeWindow(df)
     window.show()
     sys.exit(app.exec_())
