@@ -43,7 +43,7 @@ If you prefer to scrape your own data instead of using the pre-scraped dataset p
 	```
   This will scrape 10,000+ recipes from Allrecipes.com along with their images.
 
-5. **Saving and Using the Data:** Once the script completes, the recipe data will be saved in a JSON file located in `scraping/recipes` as `scraped_recipes.json`. The images will be saved in the `scraping/images` folder.  These images can be matched to their corresponding recipe using the image_filename field in `scraped_images.json`. Additionally, a .txt file will be created in the `scraping/links` folder. This file contains all the links to the scraped recipes along with the category each recipe belongs to.
+5. **Saving and Using the Data:** Once the script completes, the recipe data will be saved in a JSON file located in `src/scraping/recipes` as `scraped_recipes.json`. The images will be saved in the `src/scraping/images` folder.  These images can be matched to their corresponding recipe using the image_filename field in `scraped_images.json`. Additionally, a .txt file will be created in the `src/scraping/links` folder. This file contains all the links to the scraped recipes along with the category each recipe belongs to.
 
 ## How to view and operate the interface
 ### 1. **Running the Application**
