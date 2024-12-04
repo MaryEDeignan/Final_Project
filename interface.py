@@ -212,21 +212,23 @@ class SwipeWindow(QMainWindow):
         """Reset the position of the card to its original centered position."""
         self.card.move((self.width() - self.card.width()) // 2, (self.height() - self.card.height()) // 2)
 
-    def save_to_liked(self):   #
+    def save_to_liked(self):
         """Save the current recipe to the liked DataFrame."""
-        current_row = self.dataframe.iloc[self.current_index]
-        # WORKING ON FIXING FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated.
-        current_row = current_row.dropna()  
-        if not current_row.empty:  
-            self.liked = pd.concat([self.liked, pd.DataFrame([current_row])], ignore_index=True)
+        current_row = self.dataframe.iloc[self.current_index].copy()
+        current_row = pd.DataFrame([current_row])
+        if len(self.liked) == 0:
+            self.liked = current_row
+        else:
+            self.liked.loc[len(self.liked)] = current_row.iloc[0]
 
     def save_to_disliked(self):
-        """Save the current recipe to the disliked dataframe."""
-        current_row = self.dataframe.iloc[self.current_index]
-        # WORKING ON FIXING FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated.
-        current_row = current_row.dropna() 
-        if not current_row.empty:  
-            self.disliked = pd.concat([self.disliked, pd.DataFrame([current_row])], ignore_index=True)
+        """Save the current recipe to the disliked DataFrame."""
+        current_row = self.dataframe.iloc[self.current_index].copy()
+        current_row = pd.DataFrame([current_row])
+        if len(self.disliked) == 0:
+            self.disliked = current_row
+        else:
+            self.disliked.loc[len(self.disliked)] = current_row.iloc[0]
 
     def export_dataframes(self, liked_path='data/liked_recipes.csv', disliked_path='data/disliked_recipes.csv'):
         """Export the liked and disliked DataFrames to CSV files."""
