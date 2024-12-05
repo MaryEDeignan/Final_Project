@@ -76,6 +76,9 @@ class SwipeWindow(QMainWindow):
         self.start_pos = None  # To store initial mouse position for swipe detection
 
         # Dataframes to store liked and disliked recipes
+
+        self.like_dislike = pd.DataFrame(columns=dataframe.columns) # for both
+
         self.liked = pd.DataFrame(columns=dataframe.columns)
         self.disliked = pd.DataFrame(columns=dataframe.columns)
 
@@ -185,11 +188,17 @@ class SwipeWindow(QMainWindow):
     def swipe_left(self):
         """Handle left swipe to dislike the recipe."""
         self.save_to_disliked()  # Save to disliked recipes dataframe
+        
+        self.save_to_both(False)
+
         self.animate_swipe(-800)  # Animate swipe to the left off-screen
 
     def swipe_right(self):
         """Handle right swipe to like the recipe."""
         self.save_to_liked()  # Save to liked recipes dataframe
+
+        self.save_to_both(True) 
+
         self.animate_swipe(800)  # Animate swipe to the right off-screen
 
     def animate_swipe(self, x_offset):
@@ -221,6 +230,24 @@ class SwipeWindow(QMainWindow):
         else:
             self.liked.loc[len(self.liked)] = current_row.iloc[0]
 
+    def save_to_both(self, liked = True):
+        '''Save both liked and disliked recipes to a single DataFrame. For classification.
+            liked (bool): whether the recipe was liked or disliked'''
+        current_row = self.dataframe.iloc[self.current_index].copy()
+        current_row_df = pd.DataFrame([current_row])
+
+        current_row_df['like_or_dislike'] = 'does it work?'
+
+        if liked:
+            current_row_df['like_or_dislike'] = 1
+        else:
+            current_row_df['like_or_dislike'] = 0
+
+        if len(self.like_dislike) == 0:
+            self.like_dislike = current_row_df
+        else:
+            self.like_dislike.loc[len(self.like_dislike)] = current_row_df.iloc[0]
+
     def save_to_disliked(self):
         """Save the current recipe to the disliked DataFrame."""
         current_row = self.dataframe.iloc[self.current_index].copy()
@@ -230,27 +257,33 @@ class SwipeWindow(QMainWindow):
         else:
             self.disliked.loc[len(self.disliked)] = current_row.iloc[0]
 
-    def export_dataframes(self, liked_path='data/liked_recipes.csv', disliked_path='data/disliked_recipes.csv'):
+    def export_dataframes(self, liked_path='data/liked_recipes.csv', disliked_path='data/disliked_recipes.csv', both_path = 'data/both_likes_dislikes.csv'):
         """Export the liked and disliked DataFrames to CSV files."""
         # Ensure the directories exist
         liked_dir = os.path.dirname(liked_path)
         disliked_dir = os.path.dirname(disliked_path)
+        both_dir = os.path.dirname(both_path)
         if liked_dir and not os.path.exists(liked_dir):
             os.makedirs(liked_dir)
         if disliked_dir and not os.path.exists(disliked_dir):
             os.makedirs(disliked_dir)
+        if both_dir and not os.path.exists(both_dir):
+            os.makedirs(both_dir)
 
         # Save the dataframes to csv files
         self.liked.to_csv(liked_path, index=False)
         self.disliked.to_csv(disliked_path, index=False)
+        self.like_dislike.to_csv(both_path, index = False)
         print(f"Liked recipes saved to: {liked_path}")
         print(f"Disliked recipes saved to: {disliked_path}")
+        print(f'Liked/disliked recipes saved to:\n{both_path}')
 
     def closeEvent(self, event):
         """Handle actions when the window is closed"""
         liked_path = 'data/liked_recipes.csv'  # Setting folder/file for liked recipe csv
         disliked_path = 'data/disliked_recipes.csv'  # Setting folder/file for disliked recipe csv
-        self.export_dataframes(liked_path, disliked_path)  # Export data before closing
+        both_path = 'data/both_likes_dislikes.csv'
+        self.export_dataframes(liked_path, disliked_path, both_path)  # Export data before closing
         event.accept()  # Proceed with closing the window
 
 
