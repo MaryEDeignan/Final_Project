@@ -45,15 +45,15 @@ DARK_THEME = """
 """
 
 def is_dark_mode():
-    if platform.system() == "Darwin":  # macOS
+    if platform.system() == "Darwin":  # mac
         result = subprocess.run(
             ["defaults", "read", "-g", "AppleInterfaceStyle"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
         )
-        return result.returncode == 0  # Returns 0 if dark mode is enabled
-    elif platform.system() == "Windows":
+        return result.returncode == 0  
+    elif platform.system() == "Windows":  # windows
         try:
             import winreg
             key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize")
@@ -74,18 +74,17 @@ class SwipeWindow(QMainWindow):
         super().__init__()
 
         self.preferences_file = 'data/preferences.csv'
-        self.original_dataframe = dataframe  # Keep the original dataframe intact
+        self.original_dataframe = dataframe  
         self.dataframe = dataframe.copy()
         self.current_index = 0
         self.start_pos = None
 
-        # Load preferences or initialize a new preferences file
+        # Load preferences or initialize a new preferences file if one doesn't exist
         if os.path.exists(self.preferences_file):
             self.preferences = pd.read_csv(self.preferences_file)
         else:
             self.preferences = pd.DataFrame(columns=["image_filename", "like_or_dislike"])
 
-        # Merge preferences with the original recipe data
         self.both_likes_dislikes = self.merge_preferences()
 
         self.liked = pd.DataFrame(columns=dataframe.columns)
@@ -134,22 +133,21 @@ class SwipeWindow(QMainWindow):
         self.card.setFixedSize(350, 500)
         self.layout.addWidget(self.card, alignment=Qt.AlignCenter)
 
-        # Create button layout
         self.button_layout = QHBoxLayout()
 
         # Add "Dislike" button with an "X"
         self.dislike_button = QPushButton("", self)
-        self.dislike_button.setFixedSize(150, 30)
-        self.dislike_button.setIcon(QIcon("docs/images/cross.png"))  # Path to your downloaded icon
-        self.dislike_button.setIconSize(QSize(20, 20))  # Adjust icon size
+        self.dislike_button.setFixedSize(150, 30) # button size, rectangle
+        self.dislike_button.setIcon(QIcon("docs/images/cross.png")) 
+        self.dislike_button.setIconSize(QSize(20, 20))  # icon size
         self.dislike_button.setStyleSheet("""
             QPushButton {
-                background-color: #D3D3D3; /* Light grey background */
+                background-color: #D3D3D3; /* light grey background */
                 border: none;
                 border-radius: 10; /*  rounded corners */
             }
             QPushButton:hover {
-                background-color: #C0C0C0; /* Slightly darker grey when hovered */
+                background-color: #C0C0C0; /* darker grey on hover */
             }
         """)
 
@@ -158,23 +156,22 @@ class SwipeWindow(QMainWindow):
 
         # Add "Like" button with a heart
         self.like_button = QPushButton("", self)
-        self.like_button.setFixedSize(150, 30)
-        self.like_button.setIcon(QIcon("docs/images/heart.png"))  # Path to your downloaded heart icon
-        self.like_button.setIconSize(QSize(20, 20))  # Adjust icon size
+        self.like_button.setFixedSize(150, 30) # button size, rectangle
+        self.like_button.setIcon(QIcon("docs/images/heart.png"))  
+        self.like_button.setIconSize(QSize(20, 20))  # icon size
         self.like_button.setStyleSheet("""
             QPushButton {
-                background-color: #D3D3D3; /* Light grey background */
+                background-color: #D3D3D3; /* light grey background */
                 border: none;
                 border-radius: 10px; /* rounded corners */
             }
             QPushButton:hover {
-                background-color: #C0C0C0; /* Slightly darker grey when hovered */
+                background-color: #C0C0C0; /* darker grey on hover */
             }
         """)
         self.like_button.clicked.connect(self.swipe_right)
         self.button_layout.addWidget(self.like_button)
 
-        # Add the button layout to the main layout
         self.layout.addLayout(self.button_layout)
 
         self.update_card_text()
@@ -267,23 +264,15 @@ class SwipeWindow(QMainWindow):
         self.card.move((self.width() - self.card.width()) // 2, (self.height() - self.card.height()) // 2)
 
     def save_preferences(self):
-        # Get all recipe data columns plus the like_or_dislike column
         columns_to_save = list(self.original_dataframe.columns) + ['like_or_dislike']
-        # Get only the rows that have been swiped (have a like_or_dislike value)
         prefs_to_save = self.both_likes_dislikes[self.both_likes_dislikes['like_or_dislike'].notna()]
-        # Keep all columns for these rows
         prefs_to_save = prefs_to_save[columns_to_save]
-        # Drop duplicates before saving, keeping the last occurrence
         prefs_to_save = prefs_to_save.drop_duplicates(subset='image_filename', keep='last')
-        # Create the data directory if it doesn't exist
         os.makedirs(os.path.dirname(self.preferences_file), exist_ok=True)
-        # Save to CSV
         prefs_to_save.to_csv(self.preferences_file, index=False)
 
     def update_available_recipes(self):
-        # Get the swiped recipes based on 'like_or_dislike' column in both_likes_dislikes
         swiped_recipes = self.both_likes_dislikes[self.both_likes_dislikes['like_or_dislike'].notna()]['image_filename']
-        # Filter out swiped recipes from the dataframe
         self.dataframe = self.original_dataframe[~self.original_dataframe['image_filename'].isin(swiped_recipes)].reset_index(drop=True)
 
 
@@ -291,15 +280,15 @@ class SwipeWindow(QMainWindow):
         current_row = self.dataframe.iloc[self.current_index]
         mask = self.both_likes_dislikes['image_filename'] == current_row['image_filename']
         self.both_likes_dislikes.loc[mask, 'like_or_dislike'] = 1
-        self.save_preferences()  # Save preferences to file
-        self.update_available_recipes()  # Update available recipes
+        self.save_preferences()  
+        self.update_available_recipes() 
 
     def save_to_disliked(self):
         current_row = self.dataframe.iloc[self.current_index]
         mask = self.both_likes_dislikes['image_filename'] == current_row['image_filename']
         self.both_likes_dislikes.loc[mask, 'like_or_dislike'] = 0
-        self.save_preferences()  # Save preferences to file
-        self.update_available_recipes()  # Update available recipes
+        self.save_preferences()  
+        self.update_available_recipes()  
 
 if __name__ == "__main__":
     df = pd.read_csv('data/recipe_data.csv')
