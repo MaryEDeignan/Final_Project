@@ -10,11 +10,13 @@ from PyQt5.QtWidgets import (
     QMainWindow,
     QWidget,
     QLabel,
+    QListWidget,
     QVBoxLayout,
     QHBoxLayout,
     QPushButton,
     QSpacerItem,
     QSizePolicy,
+    QDialog
 )
 
 # Define light and dark themes
@@ -68,6 +70,44 @@ def apply_theme(app):
         app.setStyleSheet(DARK_THEME)
     else:
         app.setStyleSheet(LIGHT_THEME)
+
+class LikedRecipesPage(QDialog):
+    def __init__(self, liked_recipes_dataframe):
+        super().__init__()
+
+        self.setWindowTitle("Liked Recipes")
+        self.setGeometry(100, 100, 400, 600)
+
+        self.layout = QVBoxLayout()
+
+        self.back_button = QPushButton("Back to Swipe", self)
+        self.back_button.clicked.connect(self.close)  # Close the Liked Recipes Page when clicked
+        self.back_button.setStyleSheet("""
+            QPushButton {
+                background-color: #D3D3D3; /* Light grey background */
+                border: none;
+                border-radius: 10px; /* Rounded corners */
+                padding: 10px; /* Padding around text */
+            }
+            QPushButton:hover {
+                background-color: #C0C0C0; /* Darker grey on hover */
+            }
+        """)
+        self.layout.addWidget(self.back_button)
+
+        self.recipes_list = QListWidget(self)
+
+        # liked recipes
+        for _, row in liked_recipes_dataframe.iterrows():
+            self.recipes_list.addItem(f"{row['title']}")
+
+        self.layout.addWidget(self.recipes_list)
+
+        container = QWidget()
+        container.setLayout(self.layout)
+        self.setLayout(self.layout)
+
+        self.exec_()  
 
 class SwipeWindow(QMainWindow):
     def __init__(self, dataframe):
@@ -137,8 +177,8 @@ class SwipeWindow(QMainWindow):
 
         # Add "Dislike" button with an "X"
         self.dislike_button = QPushButton("", self)
-        self.dislike_button.setFixedSize(150, 30) # button size, rectangle
-        self.dislike_button.setIcon(QIcon("docs/images/cross.png")) 
+        self.dislike_button.setFixedHeight(30)
+        self.dislike_button.setIcon(QIcon("docs/images/cross.png"))
         self.dislike_button.setIconSize(QSize(20, 20))  # icon size
         self.dislike_button.setStyleSheet("""
             QPushButton {
@@ -156,8 +196,8 @@ class SwipeWindow(QMainWindow):
 
         # Add "Like" button with a heart
         self.like_button = QPushButton("", self)
-        self.like_button.setFixedSize(150, 30) # button size, rectangle
-        self.like_button.setIcon(QIcon("docs/images/heart.png"))  
+        self.like_button.setFixedHeight(30)
+        self.like_button.setIcon(QIcon("docs/images/heart.png"))
         self.like_button.setIconSize(QSize(20, 20))  # icon size
         self.like_button.setStyleSheet("""
             QPushButton {
@@ -172,12 +212,35 @@ class SwipeWindow(QMainWindow):
         self.like_button.clicked.connect(self.swipe_right)
         self.button_layout.addWidget(self.like_button)
 
+        self.spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.layout.addItem(self.spacer)
+
         self.layout.addLayout(self.button_layout)
+
+        # Liked Recipes Button
+        self.liked_recipes_button = QPushButton("Liked Recipes", self)
+        self.liked_recipes_button.clicked.connect(self.show_liked_recipes_page)
+        self.liked_recipes_button.setStyleSheet("""
+            QPushButton {
+                background-color: #D3D3D3; /* Light grey background */
+                border: none;
+                border-radius: 10px; /* Rounded corners */
+                padding: 10px; /* Padding around text */
+            }
+            QPushButton:hover {
+                background-color: #C0C0C0; /* Darker grey on hover */
+            }
+        """)
+        self.layout.addWidget(self.liked_recipes_button)
 
         self.update_card_text()
 
+    def show_liked_recipes_page(self):
+        liked_recipes = self.both_likes_dislikes[self.both_likes_dislikes['like_or_dislike'] == 1]
+        liked_recipes_page = LikedRecipesPage(liked_recipes)
+        liked_recipes_page.show()
+
     def merge_preferences(self):
-        """Merge preferences with original recipe data"""
         if os.path.exists(self.preferences_file):
             self.preferences = pd.read_csv(self.preferences_file)
             self.preferences = self.preferences[["image_filename", "like_or_dislike"]].set_index("image_filename")
