@@ -65,49 +65,82 @@ def is_dark_mode():
             return False
     return False
 
-def apply_theme(app):
+def apply_theme(app, main_window=None):
     if is_dark_mode():
         app.setStyleSheet(DARK_THEME)
+        if main_window:
+            button_style = """
+                QPushButton {
+                    background-color: #D3D3D3;
+                    color: #000000;
+                    border: none;
+                    border-radius: 10px;
+                    padding: 10px;
+                }
+                QPushButton:hover {
+                    background-color: #C0C0C0;
+                }
+            """
+            # Apply style to buttons only if they exist
+            if hasattr(main_window, 'liked_recipes_button'):
+                main_window.liked_recipes_button.setStyleSheet(button_style)
+            if hasattr(main_window, 'back_button'):
+                main_window.back_button.setStyleSheet(button_style)
+            # Apply style to all QPushButton widgets in the window
+            for button in main_window.findChildren(QPushButton):
+                button.setStyleSheet(button_style)
     else:
         app.setStyleSheet(LIGHT_THEME)
+        if main_window:
+            button_style = """
+                QPushButton {
+                    background-color: #D3D3D3;
+                    color: #000000;
+                    border: none;
+                    border-radius: 10px;
+                    padding: 10px;
+                }
+                QPushButton:hover {
+                    background-color: #C0C0C0;
+                }
+            """
+            # Apply style to buttons only if they exist
+            if hasattr(main_window, 'liked_recipes_button'):
+                main_window.liked_recipes_button.setStyleSheet(button_style)
+            if hasattr(main_window, 'back_button'):
+                main_window.back_button.setStyleSheet(button_style)
+            # Apply style to all QPushButton widgets in the window
+            for button in main_window.findChildren(QPushButton):
+                button.setStyleSheet(button_style)
 
 class LikedRecipesPage(QDialog):
     def __init__(self, liked_recipes_dataframe):
         super().__init__()
-
+        
         self.setWindowTitle("Liked Recipes")
         self.setGeometry(100, 100, 400, 600)
-
+        
         self.layout = QVBoxLayout()
-
+        
         self.back_button = QPushButton("Back to Swipe", self)
-        self.back_button.clicked.connect(self.close)  # Close the Liked Recipes Page when clicked
-        self.back_button.setStyleSheet("""
-            QPushButton {
-                background-color: #D3D3D3; /* Light grey background */
-                border: none;
-                border-radius: 10px; /* Rounded corners */
-                padding: 10px; /* Padding around text */
-            }
-            QPushButton:hover {
-                background-color: #C0C0C0; /* Darker grey on hover */
-            }
-        """)
+        self.back_button.clicked.connect(self.close)
         self.layout.addWidget(self.back_button)
-
+        
         self.recipes_list = QListWidget(self)
-
-        # liked recipes
+        
         for _, row in liked_recipes_dataframe.iterrows():
             self.recipes_list.addItem(f"{row['title']}")
-
+            
         self.layout.addWidget(self.recipes_list)
-
+        
         container = QWidget()
         container.setLayout(self.layout)
         self.setLayout(self.layout)
-
-        self.exec_()  
+        
+        # Apply the theme to this dialog
+        apply_theme(QApplication.instance(), self)
+        
+        self.exec_()
 
 class SwipeWindow(QMainWindow):
     def __init__(self, dataframe):
@@ -367,7 +400,7 @@ if __name__ == "__main__":
         raise ValueError("CSV file must have columns: 'title', 'rating', 'total_time', and 'image_filename'")
 
     app = QApplication(sys.argv)
-    apply_theme(app)
     window = SwipeWindow(df)
+    apply_theme(app, window)  # Pass the main window
     window.show()
     sys.exit(app.exec_())
