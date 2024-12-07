@@ -73,12 +73,25 @@ class SwipeWindow(QMainWindow):
     def __init__(self, dataframe):
         super().__init__()
 
-        self.dataframe = dataframe
+        self.preferences_file = 'data/preferences.csv'
+        self.original_dataframe = dataframe  # Keep the original dataframe intact
+        self.dataframe = dataframe.copy()
         self.current_index = 0
         self.start_pos = None
 
+        # Load preferences or initialize a new preferences file
+        if os.path.exists(self.preferences_file):
+            self.preferences = pd.read_csv(self.preferences_file)
+        else:
+            self.preferences = pd.DataFrame(columns=["image_filename", "like_or_dislike"])
+
+        # Merge preferences with the original recipe data
+        self.both_likes_dislikes = self.merge_preferences()
+
         self.liked = pd.DataFrame(columns=dataframe.columns)
         self.disliked = pd.DataFrame(columns=dataframe.columns)
+
+        self.update_available_recipes()
 
         self.setWindowTitle("Recipe Swiper")
         self.setGeometry(100, 100, 400, 600)
@@ -166,6 +179,28 @@ class SwipeWindow(QMainWindow):
 
         self.update_card_text()
 
+    def merge_preferences(self):
+        """Merge preferences with original recipe data"""
+        if os.path.exists(self.preferences_file):
+            self.preferences = pd.read_csv(self.preferences_file)
+            self.preferences = self.preferences[["image_filename", "like_or_dislike"]].set_index("image_filename")
+            merged = self.original_dataframe.set_index("image_filename").join(
+                self.preferences, how="left"
+            )
+            return merged.reset_index()
+        return self.original_dataframe.assign(like_or_dislike=pd.NA)
+        
+    def update_available_recipes(self):
+        # Filter out recipes that have already been swiped
+        swiped_recipes = self.both_likes_dislikes[
+            self.both_likes_dislikes["like_or_dislike"].notna()
+        ]["image_filename"]
+
+        # Keep only the recipes that haven't been swiped yet
+        self.dataframe = self.original_dataframe[
+            ~self.original_dataframe["image_filename"].isin(swiped_recipes)
+        ].reset_index(drop=True)
+
     def update_card_text(self):
         if self.current_index < len(self.dataframe):
             row = self.dataframe.iloc[self.current_index]
@@ -221,28 +256,50 @@ class SwipeWindow(QMainWindow):
         self.animation.start()
 
     def handle_animation_end(self):
-        self.current_index = (self.current_index + 1) % len(self.dataframe)
-        self.update_card_text()
-        self.reset_card_position()
+        if len(self.dataframe) > 0:
+            self.current_index = (self.current_index + 1) % len(self.dataframe)
+            self.update_card_text()
+            self.reset_card_position()
+        else:
+            self.close()  # Close the window when no more recipes are available
 
     def reset_card_position(self):
         self.card.move((self.width() - self.card.width()) // 2, (self.height() - self.card.height()) // 2)
 
+    def save_preferences(self):
+        # Get all recipe data columns plus the like_or_dislike column
+        columns_to_save = list(self.original_dataframe.columns) + ['like_or_dislike']
+        # Get only the rows that have been swiped (have a like_or_dislike value)
+        prefs_to_save = self.both_likes_dislikes[self.both_likes_dislikes['like_or_dislike'].notna()]
+        # Keep all columns for these rows
+        prefs_to_save = prefs_to_save[columns_to_save]
+        # Drop duplicates before saving, keeping the last occurrence
+        prefs_to_save = prefs_to_save.drop_duplicates(subset='image_filename', keep='last')
+        # Create the data directory if it doesn't exist
+        os.makedirs(os.path.dirname(self.preferences_file), exist_ok=True)
+        # Save to CSV
+        prefs_to_save.to_csv(self.preferences_file, index=False)
+
+    def update_available_recipes(self):
+        # Get the swiped recipes based on 'like_or_dislike' column in both_likes_dislikes
+        swiped_recipes = self.both_likes_dislikes[self.both_likes_dislikes['like_or_dislike'].notna()]['image_filename']
+        # Filter out swiped recipes from the dataframe
+        self.dataframe = self.original_dataframe[~self.original_dataframe['image_filename'].isin(swiped_recipes)].reset_index(drop=True)
+
+
     def save_to_liked(self):
-        current_row = self.dataframe.iloc[self.current_index].copy()
-        current_row = pd.DataFrame([current_row])
-        if len(self.liked) == 0:
-            self.liked = current_row
-        else:
-            self.liked.loc[len(self.liked)] = current_row.iloc[0]
+        current_row = self.dataframe.iloc[self.current_index]
+        mask = self.both_likes_dislikes['image_filename'] == current_row['image_filename']
+        self.both_likes_dislikes.loc[mask, 'like_or_dislike'] = 1
+        self.save_preferences()  # Save preferences to file
+        self.update_available_recipes()  # Update available recipes
 
     def save_to_disliked(self):
-        current_row = self.dataframe.iloc[self.current_index].copy()
-        current_row = pd.DataFrame([current_row])
-        if len(self.disliked) == 0:
-            self.disliked = current_row
-        else:
-            self.disliked.loc[len(self.disliked)] = current_row.iloc[0]
+        current_row = self.dataframe.iloc[self.current_index]
+        mask = self.both_likes_dislikes['image_filename'] == current_row['image_filename']
+        self.both_likes_dislikes.loc[mask, 'like_or_dislike'] = 0
+        self.save_preferences()  # Save preferences to file
+        self.update_available_recipes()  # Update available recipes
 
 if __name__ == "__main__":
     df = pd.read_csv('data/recipe_data.csv')
