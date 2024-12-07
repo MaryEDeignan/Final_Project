@@ -62,11 +62,11 @@ If you prefer to scrape your own data instead of using the pre-scraped dataset p
 ### 2. **Interacting with the Interface**
 When the application launches, the interface will display recipe cards that you can swipe through. Each card contains information about a recipe, including its title, rating, total time, and an image. We are looking at adding additional information to the cards, as well adding a feauture that allows users to swipe up to see additional information. 
 #### Swipe Actions: - 
-- **Swipe Right**: Click and drag the card to the right to indicate you like the recipe. The recipes you like will be saved to `liked_recipes.csv` when you close out of the application. 
-- **Swipe Left**: Click and drag the card to the left to indicate you dislike the recipe. The recipes you dislike will be saved to `disliked_recipes.csv` when you close out of the application. 
+- **Swipe Right**: Click and drag the card to the right to indicate you like the recipe. The recipes you like will be saved to `liked_recipes.csv` when you close out of the application. You can also click the heart button on the bottom right if you have issues with swiping. 
+- **Swipe Left**: Click and drag the card to the left to indicate you dislike the recipe. The recipes you dislike will be saved to `disliked_recipes.csv` when you close out of the application. You can also click the X button on the bottom left if you have issues with swiping. 
 
 ### 3. **Exiting the Interface** 
-When you close the application, it will automatically save your liked and disliked recipes to the corresponding .csv files. If you want to manually save the data at any time, you can click the exit button, and the data will be exported to the specified CSV files. Currently, the data is overwritten every time you open the app and use it again.
+When you close the application, it will automatically save your liked and disliked recipes to the corresponding .csv files. Preferences are also saved to a file named `preferences.csv` which contains whether the recipe was liked or disliked as well as all additional information on the recipe. 
 
 ## Files in the `useful_notebooks` folder
 This folder serves as a record of some of the work we've done in the past, that either has not yet been automated or should not be automated.
