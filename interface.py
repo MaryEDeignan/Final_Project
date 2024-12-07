@@ -170,7 +170,7 @@ class SwipeWindow(QMainWindow):
         self.text_layout.addWidget(self.total_time_label)
 
         self.card_layout.addWidget(self.text_container)
-        self.card.setFixedSize(350, 500)
+        self.card.setFixedSize(350, 550)   
         self.layout.addWidget(self.card, alignment=Qt.AlignCenter)
 
         self.button_layout = QHBoxLayout()
@@ -321,10 +321,17 @@ class SwipeWindow(QMainWindow):
             self.update_card_text()
             self.reset_card_position()
         else:
-            self.close()  # Close the window when no more recipes are available
+            self.title_label.setText("No more recipes!")
+            self.image_label.clear()
+            self.rating_label.setText("")
+            self.total_time_label.setText("")
+        self.reset_card_position()
 
     def reset_card_position(self):
-        self.card.move((self.width() - self.card.width()) // 2, (self.height() - self.card.height()) // 2)
+        # Calculate the center position for the card
+        center_x = (self.width() - self.card.width()) // 2
+        center_y = (self.height() - self.card.height()) // 2 - 50  # Adjust vertical position
+        self.card.move(center_x, center_y)
 
     def save_preferences(self):
         columns_to_save = list(self.original_dataframe.columns) + ['like_or_dislike']
