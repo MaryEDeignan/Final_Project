@@ -4,7 +4,7 @@ import os
 import platform
 import subprocess
 from PyQt5.QtCore import Qt, QPoint, QPropertyAnimation, QSize
-from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtGui import QPixmap, QIcon, QFont
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import (
     QSizePolicy,
     QDialog
 )
+
 
 # Define light and dark themes
 LIGHT_THEME = """
@@ -66,52 +67,34 @@ def is_dark_mode():
     return False
 
 def apply_theme(app, main_window=None):
+    button_style = """
+        QPushButton {
+            background-color: #D3D3D3;
+            color: #000000;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+        }
+        QPushButton:hover {
+            background-color: #C0C0C0;
+        }
+    """
+
     if is_dark_mode():
         app.setStyleSheet(DARK_THEME)
-        if main_window:
-            button_style = """
-                QPushButton {
-                    background-color: #D3D3D3;
-                    color: #000000;
-                    border: none;
-                    border-radius: 10px;
-                    padding: 10px;
-                }
-                QPushButton:hover {
-                    background-color: #C0C0C0;
-                }
-            """
-            # Apply style to buttons only if they exist
-            if hasattr(main_window, 'liked_recipes_button'):
-                main_window.liked_recipes_button.setStyleSheet(button_style)
-            if hasattr(main_window, 'back_button'):
-                main_window.back_button.setStyleSheet(button_style)
-            # Apply style to all QPushButton widgets in the window
-            for button in main_window.findChildren(QPushButton):
-                button.setStyleSheet(button_style)
     else:
         app.setStyleSheet(LIGHT_THEME)
-        if main_window:
-            button_style = """
-                QPushButton {
-                    background-color: #D3D3D3;
-                    color: #000000;
-                    border: none;
-                    border-radius: 10px;
-                    padding: 10px;
-                }
-                QPushButton:hover {
-                    background-color: #C0C0C0;
-                }
-            """
-            # Apply style to buttons only if they exist
-            if hasattr(main_window, 'liked_recipes_button'):
-                main_window.liked_recipes_button.setStyleSheet(button_style)
-            if hasattr(main_window, 'back_button'):
-                main_window.back_button.setStyleSheet(button_style)
-            # Apply style to all QPushButton widgets in the window
-            for button in main_window.findChildren(QPushButton):
-                button.setStyleSheet(button_style)
+
+    if main_window:
+        # Apply button style to all QPushButtons in the main window
+        for button in main_window.findChildren(QPushButton):
+            button.setStyleSheet(button_style)
+
+        # Optionally adjust font size for the "Liked Recipes" button
+        if hasattr(main_window, 'liked_recipes_button'):
+            font = main_window.liked_recipes_button.font()
+            font.setPointSize(18)  # Adjust the font size as needed
+            main_window.liked_recipes_button.setFont(font)
 
 class LikedRecipesPage(QDialog):
     def __init__(self, liked_recipes_dataframe):
@@ -255,27 +238,34 @@ class SwipeWindow(QMainWindow):
         self.liked_recipes_button.clicked.connect(self.show_liked_recipes_page)
         self.liked_recipes_button.setStyleSheet("""
             QPushButton {
-                background-color: #D3D3D3; /* Light grey background */
+                background-color: #D3D3D3;
                 border: none;
-                border-radius: 10px; /* Rounded corners */
-                padding: 10px; /* Padding around text */
+                border-radius: 5px;
+                padding: 5px;
             }
             QPushButton:hover {
-                background-color: #C0C0C0; /* Darker grey on hover */
+                background-color: #C0C0C0;
             }
         """)
+
+        font = self.liked_recipes_button.font()
+        font.setPointSize(18)  # Adjust this value to change the font size
+        self.liked_recipes_button.setFont(font)
+
         self.layout.addWidget(self.liked_recipes_button)
 
         self.update_card_text()
 
     def show_liked_recipes_page(self):
         liked_recipes = self.both_likes_dislikes[self.both_likes_dislikes['like_or_dislike'] == 1]
+        liked_recipes = liked_recipes.drop_duplicates(subset="image_filename", keep="last")  # Remove duplicates
         liked_recipes_page = LikedRecipesPage(liked_recipes)
         liked_recipes_page.show()
 
     def merge_preferences(self):
         if os.path.exists(self.preferences_file):
             self.preferences = pd.read_csv(self.preferences_file)
+            self.preferences = self.preferences.drop_duplicates(subset="image_filename", keep="last")  # Deduplicate
             self.preferences = self.preferences[["image_filename", "like_or_dislike"]].set_index("image_filename")
             merged = self.original_dataframe.set_index("image_filename").join(
                 self.preferences, how="left"
@@ -333,10 +323,12 @@ class SwipeWindow(QMainWindow):
 
     def swipe_left(self):
         self.save_to_disliked()
+        self.update_available_recipes()
         self.animate_swipe(-800)
 
     def swipe_right(self):
         self.save_to_liked()
+        self.update_available_recipes()
         self.animate_swipe(800)
 
     def animate_swipe(self, x_offset):
@@ -369,8 +361,7 @@ class SwipeWindow(QMainWindow):
     def save_preferences(self):
         columns_to_save = list(self.original_dataframe.columns) + ['like_or_dislike']
         prefs_to_save = self.both_likes_dislikes[self.both_likes_dislikes['like_or_dislike'].notna()]
-        prefs_to_save = prefs_to_save[columns_to_save]
-        prefs_to_save = prefs_to_save.drop_duplicates(subset='image_filename', keep='last')
+        prefs_to_save = prefs_to_save.drop_duplicates(subset='image_filename', keep='last')  # Ensure no duplicates
         os.makedirs(os.path.dirname(self.preferences_file), exist_ok=True)
         prefs_to_save.to_csv(self.preferences_file, index=False)
 
