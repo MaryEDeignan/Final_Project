@@ -22,20 +22,20 @@ class TwoLayerGCN(torch.nn.Module):
         return torch.sigmoid(x)
     
 class RecipeDataClassification:
-    def __init__(self, data):
+    def __init__(self, data, use_data: bool = True, graph_model = None):
         # make labels floats
-        data['classification'] = data['classification'].astype(float)
-
-        self.train_x, self.test_x, self.train_y, self.test_y = train_test_split(data['text'].values, data['classification'].values, test_size = 0.2)
+        if use_data:
+            data['classification'] = data['classification'].astype(float)
+            self.train_x, self.test_x, self.train_y, self.test_y = train_test_split(data['text'].values, data['classification'].values, test_size = 0.2)
         
-        # initialize tokenizers and embedding models for later
+            # initialize tokenizers and embedding models for later
         self.tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
         self.embedding_model = AutoModel.from_pretrained('bert-base-uncased')
 
         for param in self.embedding_model.parameters():
             param.requires_grad = False # efficiency
         
-        self.graph_model = None
+        self.graph_model = graph_model
     
     def cosine_similarity(self, v1, v2):
         '''Calculate the cosine similarity of two vectors'''
@@ -88,15 +88,20 @@ class RecipeDataClassification:
     
     def train(self, prediction_threshold: float = 0.5):
         '''Trains'''
+        print('Getting graph networks...')
         train_graph = self.create_network(self.train_x, self.train_y)
+        print('Train network complete...')
         test_graph = self.create_network(self.test_x, self.test_y)
+        print('Test network complete...')
 
         input_dim = train_graph.x.shape[1]
         hidden_dim = 64
 
+        print('Initializing model...')
         model = TwoLayerGCN(input_dim, hidden_dim)
         optimizer = torch.optim.Adam(model.parameters(), lr = 0.01)
 
+        print('Training model...')
         model.train()
         accuracy_best = 0
         training_history = {'error': [], 'accuracy': []}
@@ -127,22 +132,23 @@ class RecipeDataClassification:
                 if accuracy > accuracy_best:
                     accuracy_best = accuracy
                     best_model = model.state_dict().copy()
-                
+        
         model.load_state_dict(best_model)
         self.graph_model = model
         
-        return {'train_error': cross_entropy.item(), 'test_accuracy': accuracy_best.item(), 'training_history': training_history}
+        return model, {'train_error': cross_entropy.item(), 'test_accuracy': accuracy_best.item(), 'training_history': training_history}
     
     def predict(self, x, trained_model = None):
-
         if trained_model is None:
             if self.graph_model is None:
                 raise ValueError('No trained model available, run train() first.')
             trained_model = self.graph_model
 
+        print('Setting trained_model...')
         trained_model.eval()
         predict_graph = self.create_network(x, np.zeros(len(x)))
 
+        print('Making predictions...')
         with torch.no_grad():
             predictions = trained_model(predict_graph.x, predict_graph.edge_index).numpy()
         
