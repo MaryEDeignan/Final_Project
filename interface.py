@@ -28,24 +28,61 @@ LIGHT_THEME = """
     }
     QLabel {
         font-size: 16px;
+        color: #000000;
+    }
+    QListWidget {
+        background-color: #FFFFFF;
+        color: #000000;
+        border: none;
+        border-radius: 10px;
+        padding: 10px;
+    }
+    QListWidget::item {
+        color: #000000;
+        padding: 10px;
+        margin: 5px;
+        border-radius: 5px;
+    }
+    QListWidget::item:selected {
+        background-color: #0078D4;
+        color: #FFFFFF;
+    }
+    QListWidget::item:hover {
+        background-color: #E5F3FF;
     }
 """
 
 DARK_THEME = """
     QWidget {
-        background-color: #2D2D2D; /* Main background is dark grey */
-        color: #FFFFFF;           /* Text color is white */
+        background-color: #2D2D2D;
+        color: #FFFFFF;
     }
     QLabel {
         font-size: 16px;
-        color: #FFFFFF;           /* Text color to white */
+        color: #FFFFFF;
     }
-    QWidget#card {
-        background-color: #2D2D2D; /* Card background is dark grey */
+    QListWidget {
+        background-color: #2D2D2D;
+        color: #FFFFFF;
+        border: none;
         border-radius: 10px;
-        color: #FFFFFF;           /* Card text is white */
+        padding: 10px;
+    }
+    QListWidget::item {
+        color: #FFFFFF;
+        padding: 10px;
+        margin: 5px;
+        border-radius: 5px;
+    }
+    QListWidget::item:selected {
+        background-color: #808080;
+        color: #FFFFFF;
+    }
+    QListWidget::item:hover {
+        background-color: #3D3D3D;
     }
 """
+
 
 def is_dark_mode():
     if platform.system() == "Darwin":  # mac
@@ -86,44 +123,75 @@ def apply_theme(app, main_window=None):
         app.setStyleSheet(LIGHT_THEME)
 
     if main_window:
-        # Apply button style to all QPushButtons in the main window
         for button in main_window.findChildren(QPushButton):
             button.setStyleSheet(button_style)
 
-        # Optionally adjust font size for the "Liked Recipes" button
         if hasattr(main_window, 'liked_recipes_button'):
             font = main_window.liked_recipes_button.font()
-            font.setPointSize(18)  # Adjust the font size as needed
+            font.setPointSize(14)  
             main_window.liked_recipes_button.setFont(font)
 
-class LikedRecipesPage(QDialog):
-    def __init__(self, liked_recipes_dataframe):
+class LikedRecipesPage(QWidget):
+    def __init__(self, liked_recipes_dataframe, back_to_swipe_callback):
         super().__init__()
         
-        self.setWindowTitle("Liked Recipes")
-        self.setGeometry(100, 100, 400, 600)
+        self.back_to_swipe_callback = back_to_swipe_callback
         
         self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
         
         self.back_button = QPushButton("Back to Swipe", self)
-        self.back_button.clicked.connect(self.close)
+        self.back_button.setFixedHeight(30)
+        self.back_button.setStyleSheet("""
+            QPushButton {
+                background-color: #D3D3D3;
+                color: black;  /* Force text to stay black */
+                border: none;
+                border-radius: 10px;
+                padding: 10px;
+            }
+            QPushButton:hover {
+                background-color: #C0C0C0;
+            }
+        """)
+        self.back_button.clicked.connect(self.back_to_swipe)
+        
+        self.title_label = QLabel("Liked Recipes", self)
+        self.title_label.setAlignment(Qt.AlignCenter)
+        self.title_label.setStyleSheet("font-size: 18px; font-weight: bold; margin: 10px;")
+        
+        self.layout.addWidget(self.title_label)
         self.layout.addWidget(self.back_button)
         
         self.recipes_list = QListWidget(self)
+        self.recipes_list.setStyleSheet("""
+            QListWidget {
+                border: none;
+                border-radius: 10px;
+                padding: 10px;
+            }
+            QListWidget::item {
+                padding: 10px;
+                margin: 5px;
+                border-radius: 5px;
+            }
+            QListWidget::item:hover {
+                background-color: #D3D3D3;
+            }
+        """)
         
+        # Populate list
         for _, row in liked_recipes_dataframe.iterrows():
             self.recipes_list.addItem(f"{row['title']}")
-            
+        
         self.layout.addWidget(self.recipes_list)
         
-        container = QWidget()
-        container.setLayout(self.layout)
-        self.setLayout(self.layout)
-        
-        # Apply the theme to this dialog
-        apply_theme(QApplication.instance(), self)
-        
-        self.exec_()
+        # Set margins for the layout
+        self.layout.setContentsMargins(10, 10, 10, 10)
+        self.layout.setSpacing(10)
+
+    def back_to_swipe(self):
+        self.back_to_swipe_callback()
 
 class SwipeWindow(QMainWindow):
     def __init__(self, dataframe):
@@ -249,7 +317,7 @@ class SwipeWindow(QMainWindow):
         """)
 
         font = self.liked_recipes_button.font()
-        font.setPointSize(18)  # Adjust this value to change the font size
+        font.setPointSize(14)  # Adjust this value to change the font size
         self.liked_recipes_button.setFont(font)
 
         self.layout.addWidget(self.liked_recipes_button)
@@ -258,9 +326,19 @@ class SwipeWindow(QMainWindow):
 
     def show_liked_recipes_page(self):
         liked_recipes = self.both_likes_dislikes[self.both_likes_dislikes['like_or_dislike'] == 1]
-        liked_recipes = liked_recipes.drop_duplicates(subset="image_filename", keep="last")  # Remove duplicates
-        liked_recipes_page = LikedRecipesPage(liked_recipes)
-        liked_recipes_page.show()
+        liked_recipes = liked_recipes.drop_duplicates(subset="image_filename", keep="last")
+        
+        def back_to_swipe():
+            self.show()
+            self.liked_recipes_page.hide()
+        
+        # Store as instance variable and set geometry to match main window
+        self.liked_recipes_page = LikedRecipesPage(liked_recipes, back_to_swipe)
+        self.liked_recipes_page.setGeometry(self.geometry())  # Match size and position
+        self.liked_recipes_page.setFixedSize(self.size())    # Ensure exact same size
+        
+        self.hide()
+        self.liked_recipes_page.show()
 
     def merge_preferences(self):
         if os.path.exists(self.preferences_file):
