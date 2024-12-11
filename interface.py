@@ -4,7 +4,8 @@ import os
 import ast
 import platform
 import subprocess
-from PyQt5.QtCore import Qt, QPoint, QPropertyAnimation, QSize
+from src.classifier import RecipeDataClassification
+from PyQt5.QtCore import Qt, QPoint, QPropertyAnimation, QSize, QThread, pyqtSignal
 from PyQt5.QtGui import QPixmap, QIcon, QFont
 from PyQt5.QtWidgets import (
     QApplication,
@@ -283,9 +284,12 @@ class SwipeWindow(QMainWindow):
             self.preferences = pd.DataFrame(columns=["image_filename", "like_or_dislike"])
 
         self.both_likes_dislikes = self.merge_preferences()
-
+        
         self.liked = pd.DataFrame(columns=dataframe.columns)
         self.disliked = pd.DataFrame(columns=dataframe.columns)
+
+        self.swipes_count = 0
+        self.model = RecipeDataClassification(data = [], use_data = False)
 
         self.update_available_recipes()
 
@@ -469,15 +473,26 @@ class SwipeWindow(QMainWindow):
                     self.swipe_left()
             self.start_pos = None
 
+    def check_swipes_count(self):
+        self.swipes_count += 1
+        print(f'Swipes count = {self.swipes_count}')
+        if self.swipes_count >= 10:
+            self.update_swipe_queue()
+            self.swipes_count = 0
+        elif self.swipes_count == 5:
+            self.train_model()
+
     def swipe_left(self):
         self.save_to_disliked()
         self.update_available_recipes()
         self.animate_swipe(-800)
+        self.check_swipes_count()
 
     def swipe_right(self):
         self.save_to_liked()
         self.update_available_recipes()
         self.animate_swipe(800)
+        self.check_swipes_count()
 
     def animate_swipe(self, x_offset):
         self.animation = QPropertyAnimation(self.card, b"pos")
@@ -515,7 +530,17 @@ class SwipeWindow(QMainWindow):
     def update_available_recipes(self):
         swiped_recipes = self.both_likes_dislikes[self.both_likes_dislikes['like_or_dislike'].notna()]['image_filename']
         self.dataframe = self.original_dataframe[~self.original_dataframe['image_filename'].isin(swiped_recipes)].reset_index(drop=True)
+    
+    def update_swipe_queue(self):
+        # Filter for unswiped recipes
+        swiped = self.both_likes_dislikes.dropna()
+        unswiped_recipes = self.original_dataframe[
+            ~self.original_dataframe["image_filename"].isin(swiped["image_filename"])
+        ].head(20)
 
+        self.prediction_thread = PredictionThread(unswiped_recipes, self.model)
+        self.prediction_thread.predictions_ready.connect(self.on_predictions_ready)
+        self.prediction_thread.start()
 
     def save_to_liked(self):
         current_row = self.dataframe.iloc[self.current_index]
@@ -529,7 +554,69 @@ class SwipeWindow(QMainWindow):
         mask = self.both_likes_dislikes['image_filename'] == current_row['image_filename']
         self.both_likes_dislikes.loc[mask, 'like_or_dislike'] = 0
         self.save_preferences()  
-        self.update_available_recipes()  
+        self.update_available_recipes()
+    
+    def train_model(self):
+        train_data = self.both_likes_dislikes.dropna()
+        train_data = train_data[['directions', 'like_or_dislike']]
+        train_data = train_data.rename(columns={'directions': 'text', 'like_or_dislike': 'classification'})
+
+        self.training_thread = TrainingThread(train_data)
+        self.training_thread.training_done.connect(self.on_training_done)
+        self.training_thread.start()
+
+        if not self.training_thread.isRunning():
+            print("Training thread did not start correctly.")
+
+    def on_training_done(self):
+        print("Model training completed!")
+        self.model = self.training_thread.model
+
+    def on_predictions_ready(self, ranked_recipes):
+        # Sort by prediction scores (descending)
+        ranked_recipes = ranked_recipes.sort_values("score", ascending=False)
+        
+        # Update the swipe queue with the top-N recipes
+        self.dataframe = ranked_recipes.head(15).reset_index(drop=True)
+        print('Predictions made...')
+        self.update_card_text()
+    
+class TrainingThread(QThread):
+    training_done = pyqtSignal()
+
+    def __init__(self, train_data, parent=None):
+        super().__init__(parent)
+        self.train_data = train_data
+
+    def run(self):
+        try:
+            print('Initializing model...')
+            model = RecipeDataClassification(self.train_data)
+            print('Training model...')
+            model.train()  # Potential exception here
+            self.model = model
+            print('Trained model set...')
+            self.training_done.emit()  # Signal completion
+        except Exception as e:
+            print(f"Error during training: {e}")
+
+class PredictionThread(QThread):
+    predictions_ready = pyqtSignal(pd.DataFrame)
+
+    def __init__(self, recipes, model, parent=None):
+        super().__init__(parent)
+        self.recipes = recipes
+        self.model = model
+
+    def run(self):
+        try:
+            print('Running predictions...')
+            predictions = self.model.predict(self.recipes['directions'])  # Adjust based on your model's predict method
+            self.recipes['score'] = predictions
+            self.predictions_ready.emit(self.recipes)
+        except Exception as e:
+            print(f"Error during predictions: {e}")
+
 
 if __name__ == "__main__":
     df = pd.read_csv('data/recipe_data.csv')
