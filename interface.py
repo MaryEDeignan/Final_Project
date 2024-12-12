@@ -23,6 +23,7 @@ from PyQt5.QtWidgets import (
     QSizePolicy,
     QDialog
 )
+from sklearn.utils import shuffle
 
 LIGHT_THEME = """
     QWidget {
@@ -729,10 +730,11 @@ class SwipeWindow(QMainWindow):
         self.dataframe = self.original_dataframe[~self.original_dataframe['image_filename'].isin(swiped_recipes)].reset_index(drop=True)
 
     def update_swipe_queue(self):
-        # Filter for unswiped recipes
+        '''Updates the swipe queue based on trained RecipeDataClassification model.
+            Samples 20 random non-selected recipes, then calls PredictionThread to make predictions using most recent trained model.'''
         swiped = self.both_likes_dislikes.dropna()
         unswiped_recipes = self.original_dataframe[
-            ~self.original_dataframe["image_filename"].isin(swiped["image_filename"])
+            shuffle(~self.original_dataframe["image_filename"].isin(swiped["image_filename"]))
         ].head(20)
 
         self.prediction_thread = PredictionThread(unswiped_recipes, self.model)
@@ -754,6 +756,8 @@ class SwipeWindow(QMainWindow):
         self.update_available_recipes()
 
     def train_model(self):
+        '''Train model based on all current recipes that have been swiped on.
+            Calls TrainingThread to complete model training.'''
         train_data = self.both_likes_dislikes.dropna()
         train_data = train_data[['directions', 'like_or_dislike']]
         train_data = train_data.rename(columns={'directions': 'text', 'like_or_dislike': 'classification'})
@@ -766,22 +770,25 @@ class SwipeWindow(QMainWindow):
             print("Training thread did not start correctly.")
 
     def on_training_done(self):
+        '''Once training is complete, signify completion and add model to self.model for later.'''
         print("Model training completed!")
         self.model = self.training_thread.model
 
-    def on_predictions_ready(self, ranked_recipes):
-        # Sort by prediction scores (descending)
+    def on_predictions_ready(self, ranked_recipes: pd.DataFrame):
+        '''Prepare predictions to present to the user in descending score order, then add the top 15 predictions to the current list of recipes to present to the user.
+            Parameters:
+                ranked_recipes (pd.DataFrame): The recipes that have been ranked by the prediction model.'''
         ranked_recipes = ranked_recipes.sort_values("score", ascending=False)
 
-        # Update the swipe queue with the top-N recipes
         self.dataframe = ranked_recipes.head(15).reset_index(drop=True)
         print('Predictions made...')
         self.update_card_text()
 
 class TrainingThread(QThread):
+    '''New thread to allow swiping actions to take place while model is being trained.'''
     training_done = pyqtSignal()
 
-    def __init__(self, train_data, parent=None):
+    def __init__(self, train_data: pd.DataFrame, parent=None):
         super().__init__(parent)
         self.train_data = train_data
 
@@ -808,7 +815,7 @@ class PredictionThread(QThread):
     def run(self):
         try:
             print('Running predictions...')
-            predictions = self.model.predict(self.recipes['directions'])  # Adjust based on your model's predict method
+            predictions = self.model.predict(self.recipes['directions'])
             self.recipes['score'] = predictions
             self.predictions_ready.emit(self.recipes)
         except Exception as e:

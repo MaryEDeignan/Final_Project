@@ -10,6 +10,10 @@ from sklearn.model_selection import train_test_split
 class TwoLayerGCN(torch.nn.Module):
     '''Two layer Graph Convolutional Network based on the Kipf et al. 2016 paper.'''
     def __init__(self, input_dim, hidden_dim):
+        '''Initialize the model with both convolutional layers
+            
+            Params:
+                input_dim: dimensions of '''
         super(TwoLayerGCN, self).__init__()
         self.conv1 = GCNConv(input_dim, hidden_dim) # input_dim -> hidden_dim
         self.conv2 = GCNConv(hidden_dim, 1) # hidden_dim -> output
