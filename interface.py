@@ -623,12 +623,17 @@ class SwipeWindow(QMainWindow):
         if self.start_pos:
             end_pos = event.pos()
             delta = end_pos - self.start_pos
-
+            
+            # Check for horizontal swipe
             if abs(delta.x()) > 30 and abs(delta.y()) < 50:
                 if delta.x() > 0:
                     self.swipe_right()
                 else:
                     self.swipe_left()
+            # Check for upward swipe
+            elif delta.y() < -50 and abs(delta.x()) < 30: 
+                self.swipe_up()
+                
             self.start_pos = None
 
     def check_swipes_count(self):
@@ -651,6 +656,40 @@ class SwipeWindow(QMainWindow):
         self.update_available_recipes()
         self.animate_swipe(800)
         self.check_swipes_count()
+
+    def swipe_up(self):
+        if self.current_index < len(self.dataframe):
+            recipe_data = self.dataframe.iloc[self.current_index]
+            self.show_recipe_detail_preview(recipe_data)
+
+    def show_recipe_detail_preview(self, recipe_data):
+        def back_to_swipe():
+            self.setGeometry(100, 100, 400, 600)
+            self.show()
+            self.recipe_detail_preview.hide()
+
+        class RecipeDetailPreview(RecipeDetailPage):
+            def create_directions_section(self, *args, **kwargs):
+                # Override to skip creating directions section
+                pass
+
+        self.recipe_detail_preview = RecipeDetailPreview(recipe_data, back_to_swipe)
+        self.recipe_detail_preview.setGeometry(100, 100, 450, 600)
+        self.recipe_detail_preview.setFixedSize(450, 600)
+
+        # Create and add transition animation
+        self.preview_animation = QPropertyAnimation(self.recipe_detail_preview, b"pos")
+        self.preview_animation.setDuration(300)
+        start_pos = QPoint(100, 700)  
+        end_pos = QPoint(100, 100)    
+        
+        self.recipe_detail_preview.move(start_pos)
+        self.preview_animation.setStartValue(start_pos)
+        self.preview_animation.setEndValue(end_pos)
+        
+        self.hide()
+        self.recipe_detail_preview.show()
+        self.preview_animation.start()
 
     def animate_swipe(self, x_offset):
         self.animation = QPropertyAnimation(self.card, b"pos")
