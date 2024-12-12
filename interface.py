@@ -6,7 +6,7 @@ import platform
 import subprocess
 from src.classifier import RecipeDataClassification
 from PyQt5.QtCore import Qt, QPoint, QPropertyAnimation, QSize, QThread, pyqtSignal
-from PyQt5.QtGui import QPixmap, QIcon, QFont
+from PyQt5.QtGui import QPixmap, QIcon, QFont, QColor, QPainter
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -464,22 +464,79 @@ class SwipeWindow(QMainWindow):
         self.card_layout = QVBoxLayout(self.card)
         self.card_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.image_label = QLabel(self.card)
+        # Add image and info button container
+        self.image_container = QWidget(self.card)
+        self.image_container_layout = QVBoxLayout(self.image_container)
+        self.image_container_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Image label
+        self.image_label = QLabel(self.image_container)
         self.image_label.setAlignment(Qt.AlignCenter)
         self.image_label.setFixedSize(350, 400)
         self.image_label.setStyleSheet("border-radius: 10px;")
-        self.card_layout.addWidget(self.image_label)
+        self.image_container_layout.addWidget(self.image_label)
+        
+        self.card_layout.addWidget(self.image_container)
 
         self.text_container = QWidget(self.card)
         self.text_layout = QVBoxLayout(self.text_container)
         self.text_layout.setContentsMargins(10, 10, 10, 10)
 
-        self.title_label = QLabel("", self.text_container)
-        self.title_label.setWordWrap(True)
-        self.title_label.setStyleSheet("font-size: 16px; font-weight: bold;")
-        self.title_label.setAlignment(Qt.AlignCenter)
-        self.text_layout.addWidget(self.title_label)
+        # Modify the title container layout to prevent unnecessary wrapping
+        title_container = QWidget()
+        title_layout = QHBoxLayout(title_container)
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(6)  # Increased spacing between title and info button
 
+        # Add spacer to the left
+        left_spacer = QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        title_layout.addItem(left_spacer)
+
+        # Add title label with size constraint
+        self.title_label = QLabel("", self.text_container)
+        self.title_label.setStyleSheet("""
+            font-size: 16px; 
+            font-weight: bold;
+        """)
+        self.title_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        title_layout.addWidget(self.title_label)
+
+        # Small fixed spacer between title and info button
+        spacer = QSpacerItem(8, 0, QSizePolicy.Fixed, QSizePolicy.Minimum)
+        title_layout.addItem(spacer)
+
+        self.info_button = QPushButton("", self.text_container)
+        self.info_button.setIcon(QIcon("docs/images/info.png"))
+        self.info_button.setIconSize(QSize(20, 20))  # Icon size
+        self.info_button.setFixedSize(25, 25)  # Ensure width and height are equal
+        self.info_button.setStyleSheet("""
+            QPushButton {
+                border: 2px solid #D3D3D3;
+                background-color: transparent;
+                border-radius: px;  /* Make it circular */
+                padding: 0px;  /* Ensure no padding interferes with the shape */
+                margin: 0px;
+            }
+            QPushButton:hover {
+                background-color: #D3D3D3;
+            }
+            QPushButton:pressed {
+                background-color: #C0C0C0;
+            }
+        """)
+        self.info_button.clicked.connect(self.show_recipe_details)
+
+        # Add button to layout
+        title_layout.addWidget(self.info_button)
+
+        # Add spacer to the right
+        right_spacer = QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        title_layout.addItem(right_spacer)
+
+        self.text_layout.addWidget(title_container)
+
+        # Add the remaining labels
         self.rating_label = QLabel("", self.text_container)
         self.rating_label.setAlignment(Qt.AlignCenter)
         self.text_layout.addWidget(self.rating_label)
@@ -498,18 +555,17 @@ class SwipeWindow(QMainWindow):
         self.dislike_button = QPushButton("", self)
         self.dislike_button.setFixedHeight(30)
         self.dislike_button.setIcon(QIcon("docs/images/cross.png"))
-        self.dislike_button.setIconSize(QSize(20, 20))  # icon size
+        self.dislike_button.setIconSize(QSize(20, 20))
         self.dislike_button.setStyleSheet("""
             QPushButton {
-                background-color: #D3D3D3; /* light grey background */
+                background-color: #D3D3D3;
                 border: none;
-                border-radius: 10; /*  rounded corners */
+                border-radius: 10px;
             }
             QPushButton:hover {
-                background-color: #C0C0C0; /* darker grey on hover */
+                background-color: #C0C0C0;
             }
         """)
-
         self.dislike_button.clicked.connect(self.swipe_left)
         self.button_layout.addWidget(self.dislike_button)
 
@@ -517,15 +573,15 @@ class SwipeWindow(QMainWindow):
         self.like_button = QPushButton("", self)
         self.like_button.setFixedHeight(30)
         self.like_button.setIcon(QIcon("docs/images/heart.png"))
-        self.like_button.setIconSize(QSize(20, 20))  # icon size
+        self.like_button.setIconSize(QSize(20, 20))
         self.like_button.setStyleSheet("""
             QPushButton {
-                background-color: #D3D3D3; /* light grey background */
+                background-color: #D3D3D3;
                 border: none;
-                border-radius: 10px; /* rounded corners */
+                border-radius: 10px;
             }
             QPushButton:hover {
-                background-color: #C0C0C0; /* darker grey on hover */
+                background-color: #C0C0C0;
             }
         """)
         self.like_button.clicked.connect(self.swipe_right)
@@ -611,7 +667,7 @@ class SwipeWindow(QMainWindow):
                 self.image_label.setPixmap(pixmap.scaled(350, 400, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation))
 
     def truncate_text(self, text):
-        max_characters = 100
+        max_characters = 35  # Reduced to prevent wrapping
         if len(text) > max_characters:
             return text[:max_characters - 3] + "..."
         return text
@@ -625,15 +681,12 @@ class SwipeWindow(QMainWindow):
             end_pos = event.pos()
             delta = end_pos - self.start_pos
             
-            # Check for horizontal swipe
+            # Check for horizontal swipe only
             if abs(delta.x()) > 30 and abs(delta.y()) < 50:
                 if delta.x() > 0:
                     self.swipe_right()
                 else:
                     self.swipe_left()
-            # Check for upward swipe
-            elif delta.y() < -50 and abs(delta.x()) < 30: 
-                self.swipe_up()
                 
             self.start_pos = None
 
@@ -658,7 +711,7 @@ class SwipeWindow(QMainWindow):
         self.animate_swipe(800)
         self.check_swipes_count()
 
-    def swipe_up(self):
+    def show_recipe_details(self):
         if self.current_index < len(self.dataframe):
             recipe_data = self.dataframe.iloc[self.current_index]
             self.show_recipe_detail_preview(recipe_data)
@@ -677,20 +730,9 @@ class SwipeWindow(QMainWindow):
         self.recipe_detail_preview = RecipeDetailPreview(recipe_data, back_to_swipe)
         self.recipe_detail_preview.setGeometry(100, 100, 450, 600)
         self.recipe_detail_preview.setFixedSize(450, 600)
-
-        # Create and add transition animation
-        self.preview_animation = QPropertyAnimation(self.recipe_detail_preview, b"pos")
-        self.preview_animation.setDuration(300)
-        start_pos = QPoint(100, 700)  
-        end_pos = QPoint(100, 100)    
-        
-        self.recipe_detail_preview.move(start_pos)
-        self.preview_animation.setStartValue(start_pos)
-        self.preview_animation.setEndValue(end_pos)
         
         self.hide()
         self.recipe_detail_preview.show()
-        self.preview_animation.start()
 
     def animate_swipe(self, x_offset):
         self.animation = QPropertyAnimation(self.card, b"pos")
