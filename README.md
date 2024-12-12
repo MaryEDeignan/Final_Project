@@ -61,10 +61,14 @@ If you prefer to scrape your own data instead of using the pre-scraped dataset p
 
 ### 2. **Interacting with the Interface**
 When the application launches, the interface will display recipe cards that you can swipe through. Each card contains information about a recipe, including its title, rating, total time, and an image. If you would like more information on a recipe, you can swipe up to get more information such as ingredients, category, and nutrition information. 
-#### Swipe Actions: - 
+#### Swipe Actions: 
 - **Swipe Right**: Click and drag the card to the right to indicate you like the recipe. You can also click the heart button on the bottom right if you have issues with swiping. The recipes you like will be saved to `preferences.csv` when you close out of the application. The last column in `preferences.csv` will have a 1 in the `like_or_dislike` column. 
 - **Swipe Left**: Click and drag the card to the left to indicate you dislike the recipe. You can also click the X button on the bottom left if you have issues with swiping. The recipes you dislike will be saved to `preferences.csv` when you close out of the application. The last column in `preferences.csv` will have a 0 in the `like_or_dislike` column.
-- **Swipe Up**: Click and drag upwards on the card. Additional information about the recipe will come up that can help you make the decision on whether you like it. To get back to the swiper, simply click the back button in the upper left hand corner. 
+- **Swipe Up**: Click and drag upwards on the card. Additional information about the recipe will come up that can help you make the decision on whether you like it. To get back to the swiper, simply click the back button in the upper left hand corner.
+
+#### Liked Recipes:
+To view all of the recipes you have liked, click the 'Liked Recipes' button on the bottom of the interface. A list will appear with all of the recipes you have liked since you started using the application. You can also click on the recipe titles to view relevant information such as ingredients, directions, and nutrition information.
+
 
 ### 3. **Exiting the Interface** 
 When you close the application, it will automatically save your liked and disliked recipes to the `preferences.csv` file in the `data` folder. This file contains all of the recipes you have swiped on and whether you liked or disliked it. 
