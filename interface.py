@@ -789,30 +789,43 @@ class TrainingThread(QThread):
     training_done = pyqtSignal()
 
     def __init__(self, train_data: pd.DataFrame, parent=None):
+        '''Initialize model with training information.
+            Parameters:
+                train_data (pd.DataFrame): training data, should be a directions and classification column
+                parent: calls QThread'''
         super().__init__(parent)
         self.train_data = train_data
+        self.model = None
 
     def run(self):
+        '''Train model and set it as the current model'''
         try:
             print('Initializing model...')
             model = RecipeDataClassification(self.train_data)
             print('Training model...')
-            model.train()  # Potential exception here
+            model.train()
             self.model = model
             print('Trained model set...')
-            self.training_done.emit()  # Signal completion
+            self.training_done.emit()
         except Exception as e:
             print(f"Error during training: {e}")
 
 class PredictionThread(QThread):
+    '''Prediction thread to allow SwipeWindow to work while predicting.'''
     predictions_ready = pyqtSignal(pd.DataFrame)
 
-    def __init__(self, recipes, model, parent=None):
+    def __init__(self, data_to_predict: pd.DataFrame, model: RecipeDataClassification, parent=None):
+        '''Initialize variables
+            Parameters:
+                data_to_predict (pd.DataFrame): data for model to predict, should be only one column
+                model (RecipeDataClassification): trained model
+                parent: calls QThread'''
         super().__init__(parent)
-        self.recipes = recipes
+        self.recipes = data_to_predict
         self.model = model
 
     def run(self):
+        '''Run the model and signal completion to the main thread'''
         try:
             print('Running predictions...')
             predictions = self.model.predict(self.recipes['directions'])
