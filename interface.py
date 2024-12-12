@@ -733,13 +733,14 @@ class SwipeWindow(QMainWindow):
         '''Updates the swipe queue based on trained RecipeDataClassification model.
             Samples 20 random non-selected recipes, then calls PredictionThread to make predictions using most recent trained model.'''
         swiped = self.both_likes_dislikes.dropna()
-        unswiped_recipes = self.original_dataframe[
-            shuffle(~self.original_dataframe["image_filename"].isin(swiped["image_filename"]))
-        ].head(20)
+        unswiped_recipes = shuffle(self.original_dataframe[
+            ~self.original_dataframe["image_filename"].isin(swiped["image_filename"])
+        ]).head(20)
 
         self.prediction_thread = PredictionThread(unswiped_recipes, self.model)
         self.prediction_thread.predictions_ready.connect(self.on_predictions_ready)
         self.prediction_thread.start()
+        self.current_index = 0
 
     def save_to_liked(self):
         current_row = self.dataframe.iloc[self.current_index]
@@ -814,7 +815,7 @@ class PredictionThread(QThread):
     '''Prediction thread to allow SwipeWindow to work while predicting.'''
     predictions_ready = pyqtSignal(pd.DataFrame)
 
-    def __init__(self, data_to_predict: pd.DataFrame, model: RecipeDataClassification, parent=None):
+    def __init__(self, data_to_predict: pd.Series, model: RecipeDataClassification, parent=None):
         '''Initialize variables
             Parameters:
                 data_to_predict (pd.DataFrame): data for model to predict, should be only one column

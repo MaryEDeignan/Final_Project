@@ -4,8 +4,10 @@ import torch.nn.functional as F
 import networkx as nx
 from torch_geometric.nn import GCNConv
 from torch_geometric.data import Data
+from torch_geometric.loader import DataLoader
 from transformers import AutoTokenizer, AutoModel
 from sklearn.model_selection import train_test_split
+from torch.utils.data import Dataset, DataLoader
 
 class TwoLayerGCN(torch.nn.Module):
     '''Two layer Graph Convolutional Network based on the Kipf et al. 2016 paper.'''
@@ -24,6 +26,16 @@ class TwoLayerGCN(torch.nn.Module):
         x = F.dropout(x, training = self.training)
         x = self.conv2(x, edge_index)
         return torch.sigmoid(x)
+    
+class TextDataset(Dataset):
+    def __init__(self, texts):
+        self.texts = texts.tolist()
+
+    def __len__(self):
+        return len(self.texts)
+
+    def __getitem__(self, idx):
+        return self.texts[idx]
     
 class RecipeDataClassification:
     def __init__(self, data, use_data: bool = True, graph_model = None):
@@ -46,9 +58,16 @@ class RecipeDataClassification:
         return np.dot(v1, v2)/(np.linalg.norm(v1)*np.linalg.norm(v2))
     
     def create_embeddings(self, x) -> np.array:
-        '''Iterating through x, tokenize it, get embeddings'''
+        '''Iterate through x to get embeddings.
+        
+            Parameters:
+                x (pd.Series): Training text data to embed, like train_x['directions']
+            
+            Output:
+                np.array: Array'''
+        x_compatible = TextDataset(x)
         embeddings = []
-
+        
         for text in x:
             # for each text in data, tokenize inputs, embed them via the embedding model, and append to np array
             inputs = self.tokenizer(text, return_tensors = 'pt', truncation = True, max_length = 512, padding = True)
@@ -61,7 +80,10 @@ class RecipeDataClassification:
         return np.array(embeddings)
     
     def create_network(self, x, y):
-        '''Create a network of the embeddings from x'''
+        '''Create a network of the embeddings from x and their relationships
+            
+            x (pd.Series): directions, basically text data to be embedded
+            y (pd.Series): classification data'''
         embeddings = self.create_embeddings(x)
 
         G = nx.Graph()
@@ -117,8 +139,8 @@ class RecipeDataClassification:
             if out.shape != train_graph.y.shape:
                 out = out[:train_graph.y.shape[0]]
             
-            cross_entropy = F.binary_cross_entropy(out, train_graph.y)
-            cross_entropy.backward()
+            loss = F.binary_cross_entropy(out, train_graph.y)
+            loss.backward()
             optimizer.step()
 
             model.eval()
@@ -130,7 +152,7 @@ class RecipeDataClassification:
                 test_pred = (test_out > prediction_threshold).float()
                 accuracy = (test_pred == test_graph.y).float().mean()
 
-                training_history['error'].append(cross_entropy.item())
+                training_history['error'].append(loss.item())
                 training_history['accuracy'].append(accuracy.item())
 
                 if accuracy > accuracy_best:
@@ -140,7 +162,7 @@ class RecipeDataClassification:
         model.load_state_dict(best_model)
         self.graph_model = model
         
-        return model, {'train_error': cross_entropy.item(), 'test_accuracy': accuracy_best.item(), 'training_history': training_history}
+        return model, {'train_error': loss.item(), 'test_accuracy': accuracy_best.item(), 'training_history': training_history}
     
     def predict(self, x, trained_model = None):
         if trained_model is None:
