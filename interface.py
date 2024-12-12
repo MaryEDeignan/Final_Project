@@ -13,8 +13,10 @@ from PyQt5.QtWidgets import (
     QWidget,
     QLabel,
     QListWidget,
-    QListWidgetItem,  
+    QScrollArea,
+    QListWidgetItem,
     QVBoxLayout,
+    QFrame,
     QHBoxLayout,
     QPushButton,
     QSpacerItem,
@@ -100,7 +102,7 @@ DARK_THEME = """
         border: none;
         border-radius: 5px;
         padding: 5px;
-        color: #000000;  
+        color: #000000;
     }
     QPushButton:hover {
         background-color: #C0C0C0;
@@ -115,7 +117,7 @@ button_style = """
         border: none;
         border-radius: 5px;
         padding: 5px;
-        color: #000000; 
+        color: #000000;
     }
     QPushButton:hover {
         background-color: #C0C0C0;
@@ -134,7 +136,7 @@ def is_dark_mode():
             stderr=subprocess.PIPE,
             text=True
         )
-        return result.returncode == 0  
+        return result.returncode == 0
     elif platform.system() == "Windows":  # windows
         try:
             import winreg
@@ -177,94 +179,248 @@ def apply_theme(app, main_window=None):
 class RecipeDetailPage(QWidget):
     def __init__(self, recipe_data, back_callback):
         super().__init__()
+        self.setGeometry(100, 100, 450, 600)
+
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        top_section = QWidget()
+        top_layout = QHBoxLayout(top_section)
+        top_layout.setContentsMargins(10, 10, 10, 5)
+
+        self.back_button = QPushButton("Back", self)
+        self.back_button.clicked.connect(back_callback)
+        self.back_button.setStyleSheet(button_style)
+        self.back_button.setFixedWidth(150)
+        top_layout.addWidget(self.back_button)
+        top_layout.addStretch()
+
+        main_layout.addWidget(top_section)
+
+        scroll = QScrollArea(self)
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        container = QWidget()
+        self.layout = QVBoxLayout(container)
+        self.layout.setContentsMargins(10, 5, 10, 10)
+        self.layout.setSpacing(10)
 
         self.recipe_data = recipe_data
-
         self.ingredients = ast.literal_eval(recipe_data['ingredients'])
         self.directions = ast.literal_eval(recipe_data['directions'])
 
-        self.layout = QVBoxLayout(self)
+        # Content sections
+        self.create_header_section()
+        self.create_stats_section()
+        self.create_nutrition_section()
+        self.create_ingredients_section()
+        self.create_directions_section()
 
-        # Title
-        self.title_label = QLabel(self.recipe_data['title'])
-        self.title_label.setAlignment(Qt.AlignCenter)
-        self.title_label.setStyleSheet("font-size: 20px; font-weight: bold;")
-        self.layout.addWidget(self.title_label)
+        scroll.setWidget(container)
+        main_layout.addWidget(scroll)
 
-        # Rating
-        self.rating_label = QLabel(f"Rating: {self.recipe_data['rating']}")
-        self.layout.addWidget(self.rating_label)
+        self.setLayout(main_layout)
 
-        # Ingredients Section
-        self.ingredients_label = QLabel("Ingredients:")
-        self.layout.addWidget(self.ingredients_label)
+    def create_section_header(self, text):
+        label = QLabel(text)
+        label.setStyleSheet("font-size: 14px; font-weight: bold;")
+        return label
 
-        # Join the ingredients into a single text block
-        ingredients_text = "\n".join(self.ingredients)
-        self.ingredients_text = QLabel(ingredients_text)
-        self.ingredients_text.setWordWrap(True)  
-        self.layout.addWidget(self.ingredients_text)
+    def create_header_section(self):
+        title_label = QLabel(self.recipe_data['title'])
+        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold;")
+        title_label.setWordWrap(True)
+        self.layout.addWidget(title_label)
 
-        # Directions
-        self.directions_label = QLabel("Directions:")
-        self.layout.addWidget(self.directions_label)
+        category_label = QLabel(f"Category: {self.recipe_data['category']}")
+        category_label.setAlignment(Qt.AlignCenter)
+        category_label.setStyleSheet("font-size: 12px;")
+        self.layout.addWidget(category_label)
 
-        # Join the directions into a single text block
-        directions_text = "\n".join(self.directions)
-        self.directions_text = QLabel(directions_text)
-        self.directions_text.setWordWrap(True)
-        self.layout.addWidget(self.directions_text)
+        self.layout.addWidget(self.create_horizontal_line())
 
-        # Back Button
-        self.back_button = QPushButton("Back", self)
-        self.back_button.clicked.connect(back_callback)
-        self.back_button.setStyleSheet(button_style) 
-        self.layout.addWidget(self.back_button)
+    def create_stats_section(self):
+        stats_widget = QWidget()
+        stats_layout = QHBoxLayout(stats_widget)
+        stats_layout.setSpacing(5)
+        
+        # Rating Information
+        rating_widget = QWidget()
+        rating_layout = QVBoxLayout(rating_widget)
+        rating_layout.setAlignment(Qt.AlignCenter)
+        rating_layout.setSpacing(0)  # Reduce vertical spacing
+        rating_label = QLabel(f"<b>Rating:</b> {self.recipe_data['rating']}/5")
+        rating_count_label = QLabel(f"({self.recipe_data['rating_count']} reviews)")
+        rating_label.setStyleSheet("font-size: 12px;")
+        rating_count_label.setStyleSheet("font-size: 12px;")
+        rating_layout.addWidget(rating_label)
+        rating_layout.addWidget(rating_count_label)
+        stats_layout.addWidget(rating_widget)
+        
+        # Time Information
+        time_widget = QWidget()
+        time_layout = QVBoxLayout(time_widget)
+        time_layout.setAlignment(Qt.AlignCenter)
+        time_layout.setSpacing(0)  # Reduce vertical spacing
+        cook_time_label = QLabel(f"<b>Cook Time:</b> {self.recipe_data['cook_time']}")
+        total_time_label = QLabel(f"<b>Total Time:</b> {self.recipe_data['total_time']}")
+        cook_time_label.setStyleSheet("font-size: 12px;")
+        total_time_label.setStyleSheet("font-size: 12px;")
+        time_layout.addWidget(cook_time_label)
+        time_layout.addWidget(total_time_label)
+        stats_layout.addWidget(time_widget)
+        
+        # Servings and Steps
+        servings_widget = QWidget()
+        servings_layout = QVBoxLayout(servings_widget)
+        servings_layout.setAlignment(Qt.AlignCenter)
+        servings_layout.setSpacing(0)  # Reduce vertical spacing
+        servings_label = QLabel(f"<b>Yield:</b> {self.recipe_data['yield_servings_merge']}")
+        steps_label = QLabel(f"<b>Steps:</b> ~{self.recipe_data['verb_count']}")
+        servings_label.setStyleSheet("font-size: 12px;")
+        steps_label.setStyleSheet("font-size: 12px;")
+        servings_layout.addWidget(servings_label)
+        servings_layout.addWidget(steps_label)
+        stats_layout.addWidget(servings_widget)
+        
+        self.layout.addWidget(stats_widget)
+        self.layout.addWidget(self.create_horizontal_line())
 
-        self.setLayout(self.layout)
+    def create_nutrition_section(self):
+        self.layout.addWidget(self.create_section_header("Nutritional Information"))
 
+        nutrition_widget = QWidget()
+        nutrition_layout = QHBoxLayout(nutrition_widget)
+        nutrition_layout.setSpacing(5)
+        nutrition_layout.setContentsMargins(0, 0, 0, 0)
+
+        nutrition_items = [
+            ("Calories", f"{self.recipe_data['calories']}"),
+            ("Fat", f"{self.recipe_data['fat']}"),
+            ("Carbs", f"{self.recipe_data['carbs']}"),
+            ("Protein", f"{self.recipe_data['protein']}")
+        ]
+
+        for label, value in nutrition_items:
+            item_widget = QWidget()
+            item_layout = QVBoxLayout(item_widget)
+            item_layout.setAlignment(Qt.AlignCenter)
+
+            value_label = QLabel(value)
+            value_label.setStyleSheet("font-size: 14px; font-weight: bold;")
+            label_label = QLabel(label)
+            label_label.setStyleSheet("font-size: 12px;")
+
+            item_layout.addWidget(value_label)
+            item_layout.addWidget(label_label)
+            nutrition_layout.addWidget(item_widget)
+
+        self.layout.addWidget(nutrition_widget)
+        self.layout.addWidget(self.create_horizontal_line())
+
+    def create_ingredients_section(self):
+        self.layout.addWidget(self.create_section_header(f"Ingredients ({self.recipe_data['ingredient_count']})"))
+
+        ingredients_widget = QWidget()
+        ingredients_layout = QVBoxLayout(ingredients_widget)
+        ingredients_layout.setSpacing(3)
+
+        for ingredient in self.ingredients:
+            ingredient_label = QLabel(f"• {ingredient}")
+            ingredient_label.setStyleSheet("font-size: 12px;")
+            ingredient_label.setWordWrap(True)
+            ingredients_layout.addWidget(ingredient_label)
+
+        self.layout.addWidget(ingredients_widget)
+        self.layout.addWidget(self.create_horizontal_line())
+
+    def create_directions_section(self):
+        self.layout.addWidget(self.create_section_header("Directions"))
+
+        directions_widget = QWidget()
+        directions_layout = QVBoxLayout(directions_widget)
+        directions_layout.setSpacing(5)
+
+        for i, direction in enumerate(self.directions, 1):
+            direction_label = QLabel(f"{i}. {direction}")
+            direction_label.setStyleSheet("font-size: 12px;")
+            direction_label.setWordWrap(True)
+            directions_layout.addWidget(direction_label)
+
+        self.layout.addWidget(directions_widget)
+        self.layout.addWidget(self.create_horizontal_line())
+
+    def create_horizontal_line(self):
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setFrameShadow(QFrame.Sunken)
+        line.setStyleSheet("background-color: #BDC3C7;")
+        return line
 
 class LikedRecipesPage(QWidget):
     def __init__(self, liked_recipes_dataframe, back_to_swipe_callback):
         super().__init__()
-        
+        self.setGeometry(100, 100, 400, 600)
+
         self.back_to_swipe_callback = back_to_swipe_callback
         self.layout = QVBoxLayout(self)
-        
+
         self.back_button = QPushButton("Back to Swipe", self)
         self.back_button.setFixedHeight(30)
         self.back_button.clicked.connect(self.back_to_swipe)
-        self.back_button.setStyleSheet(button_style) 
+        self.back_button.setStyleSheet(button_style)
         self.layout.addWidget(self.back_button)
-        
+
         self.recipes_list = QListWidget(self)
-        self.recipes_list.setStyleSheet("QListWidget {border: none; border-radius: 10px; padding: 10px;} QListWidget::item {padding: 10px; margin: 5px; border-radius: 5px;} QListWidget::item:hover {background-color: #D3D3D3;}")
-        
+        self.recipes_list.setStyleSheet("""
+            QListWidget {
+                border: none;
+                border-radius: 10px;
+                padding: 10px;
+            }
+            QListWidget::item {
+                padding: 10px;
+                margin: 5px;
+                border-radius: 5px;
+            }
+            QListWidget::item:hover {
+                background-color: #D3D3D3;
+            }
+        """)
+
+        self.recipes_list.setWordWrap(True)
+        self.recipes_list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.recipes_list.setTextElideMode(Qt.ElideNone)
+
         for _, row in liked_recipes_dataframe.iterrows():
             item = QListWidgetItem(row['title'])
-            item.setData(Qt.UserRole, row)  
+            item.setData(Qt.UserRole, row)
+            width = self.recipes_list.viewport().width()
+            item.setSizeHint(QSize(width - 30, 60))
             self.recipes_list.addItem(item)
-        
+
         self.recipes_list.itemClicked.connect(self.on_recipe_click)
-        
         self.layout.addWidget(self.recipes_list)
 
     def on_recipe_click(self, item):
-        recipe_data = item.data(Qt.UserRole)  
+        recipe_data = item.data(Qt.UserRole)
         self.show_recipe_detail_page(recipe_data)
 
     def show_recipe_detail_page(self, recipe_data):
-        def back_to_swipe():
+        def back_to_liked_recipes():
+            self.setGeometry(100, 100, 400, 600)
             self.show()
             self.recipe_detail_page.hide()
-        
-        self.recipe_detail_page = RecipeDetailPage(recipe_data, back_to_swipe)
-        self.recipe_detail_page.setGeometry(self.geometry())
-        self.recipe_detail_page.setFixedSize(self.size())  
-        
+
+        self.recipe_detail_page = RecipeDetailPage(recipe_data, back_to_liked_recipes)
+        self.recipe_detail_page.setGeometry(100, 100, 450, 600)
+        self.recipe_detail_page.setFixedSize(450, 600)
+
         self.hide()
         self.recipe_detail_page.show()
-        
+
     def back_to_swipe(self):
         self.back_to_swipe_callback()
 
@@ -272,8 +428,10 @@ class SwipeWindow(QMainWindow):
     def __init__(self, dataframe):
         super().__init__()
 
+        self.setGeometry(100, 100, 400, 600)
+
         self.preferences_file = 'data/preferences.csv'
-        self.original_dataframe = dataframe  
+        self.original_dataframe = dataframe
         self.dataframe = dataframe.copy()
         self.current_index = 0
         self.start_pos = None
@@ -284,7 +442,7 @@ class SwipeWindow(QMainWindow):
             self.preferences = pd.DataFrame(columns=["image_filename", "like_or_dislike"])
 
         self.both_likes_dislikes = self.merge_preferences()
-        
+
         self.liked = pd.DataFrame(columns=dataframe.columns)
         self.disliked = pd.DataFrame(columns=dataframe.columns)
 
@@ -294,7 +452,6 @@ class SwipeWindow(QMainWindow):
         self.update_available_recipes()
 
         self.setWindowTitle("Recipe Swiper")
-        self.setGeometry(100, 100, 400, 600)
 
         self.main_widget = QWidget(self)
         self.setCentralWidget(self.main_widget)
@@ -331,7 +488,7 @@ class SwipeWindow(QMainWindow):
         self.text_layout.addWidget(self.total_time_label)
 
         self.card_layout.addWidget(self.text_container)
-        self.card.setFixedSize(350, 550)   
+        self.card.setFixedSize(350, 550)
         self.layout.addWidget(self.card, alignment=Qt.AlignCenter)
 
         self.button_layout = QHBoxLayout()
@@ -394,7 +551,7 @@ class SwipeWindow(QMainWindow):
         """)
 
         font = self.liked_recipes_button.font()
-        font.setPointSize(14)  
+        font.setPointSize(14)
         self.liked_recipes_button.setFont(font)
 
         self.layout.addWidget(self.liked_recipes_button)
@@ -404,29 +561,30 @@ class SwipeWindow(QMainWindow):
     def show_liked_recipes_page(self):
         liked_recipes = self.both_likes_dislikes[self.both_likes_dislikes['like_or_dislike'] == 1]
         liked_recipes = liked_recipes.drop_duplicates(subset="image_filename", keep="last")
-        
+
         def back_to_swipe():
+            self.setGeometry(100, 100, 400, 600)
             self.show()
             self.liked_recipes_page.hide()
-        
+
         self.liked_recipes_page = LikedRecipesPage(liked_recipes, back_to_swipe)
-        self.liked_recipes_page.setGeometry(self.geometry())  
-        self.liked_recipes_page.setFixedSize(self.size())   
-        
+        self.liked_recipes_page.setGeometry(100, 100, 400, 600)
+        self.liked_recipes_page.setFixedSize(400, 600)
+
         self.hide()
         self.liked_recipes_page.show()
 
     def merge_preferences(self):
         if os.path.exists(self.preferences_file):
             self.preferences = pd.read_csv(self.preferences_file)
-            self.preferences = self.preferences.drop_duplicates(subset="image_filename", keep="last")  # Deduplicate
+            self.preferences = self.preferences.drop_duplicates(subset="image_filename", keep="last")
             self.preferences = self.preferences[["image_filename", "like_or_dislike"]].set_index("image_filename")
             merged = self.original_dataframe.set_index("image_filename").join(
                 self.preferences, how="left"
             )
             return merged.reset_index()
         return self.original_dataframe.assign(like_or_dislike=pd.NA)
-        
+
     def update_available_recipes(self):
         swiped_recipes = self.both_likes_dislikes[
             self.both_likes_dislikes["like_or_dislike"].notna()
@@ -517,20 +675,20 @@ class SwipeWindow(QMainWindow):
 
     def reset_card_position(self):
         center_x = (self.width() - self.card.width()) // 2
-        center_y = (self.height() - self.card.height()) // 2 - 50  
+        center_y = (self.height() - self.card.height()) // 2 - 50
         self.card.move(center_x, center_y)
 
     def save_preferences(self):
         columns_to_save = list(self.original_dataframe.columns) + ['like_or_dislike']
         prefs_to_save = self.both_likes_dislikes[self.both_likes_dislikes['like_or_dislike'].notna()]
-        prefs_to_save = prefs_to_save.drop_duplicates(subset='image_filename', keep='last')  # Ensure no duplicates
+        prefs_to_save = prefs_to_save.drop_duplicates(subset='image_filename', keep='last')
         os.makedirs(os.path.dirname(self.preferences_file), exist_ok=True)
         prefs_to_save.to_csv(self.preferences_file, index=False)
 
     def update_available_recipes(self):
         swiped_recipes = self.both_likes_dislikes[self.both_likes_dislikes['like_or_dislike'].notna()]['image_filename']
         self.dataframe = self.original_dataframe[~self.original_dataframe['image_filename'].isin(swiped_recipes)].reset_index(drop=True)
-    
+
     def update_swipe_queue(self):
         # Filter for unswiped recipes
         swiped = self.both_likes_dislikes.dropna()
@@ -546,16 +704,16 @@ class SwipeWindow(QMainWindow):
         current_row = self.dataframe.iloc[self.current_index]
         mask = self.both_likes_dislikes['image_filename'] == current_row['image_filename']
         self.both_likes_dislikes.loc[mask, 'like_or_dislike'] = 1
-        self.save_preferences()  
-        self.update_available_recipes() 
+        self.save_preferences()
+        self.update_available_recipes()
 
     def save_to_disliked(self):
         current_row = self.dataframe.iloc[self.current_index]
         mask = self.both_likes_dislikes['image_filename'] == current_row['image_filename']
         self.both_likes_dislikes.loc[mask, 'like_or_dislike'] = 0
-        self.save_preferences()  
+        self.save_preferences()
         self.update_available_recipes()
-    
+
     def train_model(self):
         train_data = self.both_likes_dislikes.dropna()
         train_data = train_data[['directions', 'like_or_dislike']]
@@ -575,12 +733,12 @@ class SwipeWindow(QMainWindow):
     def on_predictions_ready(self, ranked_recipes):
         # Sort by prediction scores (descending)
         ranked_recipes = ranked_recipes.sort_values("score", ascending=False)
-        
+
         # Update the swipe queue with the top-N recipes
         self.dataframe = ranked_recipes.head(15).reset_index(drop=True)
         print('Predictions made...')
         self.update_card_text()
-    
+
 class TrainingThread(QThread):
     training_done = pyqtSignal()
 
@@ -626,6 +784,6 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
     window = SwipeWindow(df)
-    apply_theme(app, window)  
+    apply_theme(app, window)
     window.show()
     sys.exit(app.exec_())
