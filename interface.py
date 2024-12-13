@@ -793,8 +793,8 @@ class SwipeWindow(QMainWindow):
         ]["image_filename"]
 
         # filtering to only unrated recipes
-        self.dataframe = self.original_dataframe[
-            ~self.original_dataframe["image_filename"].isin(swiped_recipes)
+        self.dataframe = self.dataframe[
+            ~self.dataframe["image_filename"].isin(swiped_recipes)
         ].reset_index(drop=True)
 
     def update_card_text(self)-> None:
@@ -964,15 +964,15 @@ class SwipeWindow(QMainWindow):
         Updates the available recipes by removing ones that have been swiped on.
         """
         swiped_recipes = self.both_likes_dislikes[self.both_likes_dislikes['like_or_dislike'].notna()]['image_filename']
-        self.dataframe = self.original_dataframe[~self.original_dataframe['image_filename'].isin(swiped_recipes)].reset_index(drop=True)
+        self.dataframe = self.dataframe[~self.dataframe['image_filename'].isin(swiped_recipes)].reset_index(drop=True)
 
     def update_swipe_queue(self)-> None:
         '''Updates the swipe queue based on trained RecipeDataClassification model.
             Samples 20 random non-selected recipes, then calls PredictionThread to make predictions using most recent trained model.'''
         swiped = self.both_likes_dislikes.dropna()
-        unswiped_recipes = self.original_dataframe[
-            shuffle(~self.original_dataframe["image_filename"].isin(swiped["image_filename"]))
-        ].head(20)
+        unswiped_recipes = (shuffle(self.original_dataframe[
+            ~self.original_dataframe["image_filename"].isin(swiped["image_filename"])
+        ])).head(20)
 
         self.prediction_thread = PredictionThread(unswiped_recipes, self.model)
         self.prediction_thread.predictions_ready.connect(self.on_predictions_ready)
@@ -1022,9 +1022,11 @@ class SwipeWindow(QMainWindow):
             Parameters:
                 ranked_recipes (pd.DataFrame): The recipes that have been ranked by the prediction model.'''
         ranked_recipes = ranked_recipes.sort_values("score", ascending=False)
+        self.current_index = 0
 
         self.dataframe = ranked_recipes.head(15).reset_index(drop=True)
         print('Predictions made...')
+        self.swipes_count = 0 # reset swipes
         self.update_card_text()
 
 class TrainingThread(QThread):
