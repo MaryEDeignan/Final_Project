@@ -513,7 +513,10 @@ class LikedRecipesPage(QWidget):
 
     def on_recipe_click(self, item:QListWidgetItem)-> None:
         """
-        Opens detail page for clicked recipe.
+        Handles when a recipe item is clicked in the liked recipes list.
+        Opens the full detail page for the clicked recipe.
+            
+        Parameters: item (QListWidgetItem): The clicked recipe item in the list widget.
         """
         recipe_data = item.data(Qt.UserRole)  # getting stored recipe data
         self.show_recipe_detail_page(recipe_data) # showing recipe info
@@ -900,6 +903,12 @@ class SwipeWindow(QMainWindow):
             self.recipe_detail_preview.hide()
 
         class RecipeDetailPreview(RecipeDetailPage):
+            """
+            Subclass of RecipeDetailPage that displays a preview of recipe details.
+            
+            This class overrides the create_directions_section method to skip displaying
+            the directions section in the recipe preview as it is not necessary.
+            """
             def create_directions_section(self, *args, **kwargs):
                 pass   # skipping directions
 
