@@ -1005,6 +1005,10 @@ class SwipeWindow(QMainWindow):
         train_data = train_data[['directions', 'like_or_dislike']]
         train_data = train_data.rename(columns={'directions': 'text', 'like_or_dislike': 'classification'})
 
+        if hasattr(self, 'training_thread') and self.training_thread.isRunning():
+            print('Training not updated, waiting for previous training to complete... \nPredictions will be run on the last trained model.')
+            return
+
         self.training_thread = TrainingThread(train_data)
         self.training_thread.training_done.connect(self.on_training_done)
         self.training_thread.start()
