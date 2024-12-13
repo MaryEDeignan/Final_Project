@@ -859,7 +859,7 @@ class SwipeWindow(QMainWindow):
         if self.swipes_count >= 10:
             self.update_swipe_queue()  # updating recommendations
             self.swipes_count = 0  # resetting counter
-        elif self.swipes_count == 5:
+        elif self.swipes_count == 3:
             self.train_model()   # training on new data
 
     def swipe_left(self)-> None:

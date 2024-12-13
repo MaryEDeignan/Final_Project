@@ -58,15 +58,15 @@ class RecipeDataClassification:
         
         self.graph_model = graph_model
     
-    def cosine_similarity(self, v1: np.array, v2: np.array) -> np.ndarray:
-        '''Calculate the cosine similarity of two vectors
+    def l2_distance(self, v1: np.array, v2: np.array) -> np.ndarray:
+        '''Calculate the l2 distance of two vectors
             
             Parameters:
                 v1, v2 (np.array): numpy arrays of the two embeddings
             
             Output:
                 np.ndarray: calculated cosine similarity'''
-        return np.dot(v1, v2)/(np.linalg.norm(v1)*np.linalg.norm(v2))
+        return np.linalg.norm(v1-v2)
     
     def create_embeddings(self, x: pd.Series) -> np.ndarray:
         '''Iterate through x to get embeddings.
@@ -76,6 +76,7 @@ class RecipeDataClassification:
             
             Output:
                 np.ndarray: array of embeddings'''
+        print('Getting embeddings...')
         embeddings = []
         
         for text in x:
@@ -107,10 +108,11 @@ class RecipeDataClassification:
         for i in range(len(embeddings)):
             G.add_node(i, embedding = embeddings[i], label = y[i])
         
+        print('Calculating similarity...')
         # add edges between similar embeddings
         for i in range(len(embeddings)):
             for j in range(i+1, len(embeddings)):
-                similarity = self.cosine_similarity(embeddings[i], embeddings[j])
+                similarity = self.l2_distance(embeddings[i], embeddings[j])
                 if similarity > 0.7:
                     G.add_edge(i, j, weight = similarity)
         
