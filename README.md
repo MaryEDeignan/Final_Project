@@ -31,7 +31,7 @@ deactivate
    
    First, clone this repository to your local machine:
    ```python
-   git clone https://github.com/MaryEDeignan/Final_Project.git
+   git clone https://github.com/MaryEDeignan/Snackr.git
    ``` 
 2. **Run the Application:** Execute the Python script to launch the app:
 	```python 
@@ -56,7 +56,7 @@ If you prefer to scrape your own data instead of using the pre-scraped dataset p
 1. **Clone the Repository:**  
    First, clone this repository to your local machine:
    ```python
-   git clone https://github.com/MaryEDeignan/Final_Project.git
+   git clone https://github.com/MaryEDeignan/Snackr.git
    ```
 2. **Navigate to the Scraping Folder:** Go to the `scraping` directory inside the repository:
 	```python 
