@@ -819,6 +819,12 @@ class SwipeWindow(QMainWindow):
     def truncate_text(self, text:str)-> str:
         """
         Truncates text to 35 characters max with ellipsis.
+
+            Args:
+                text (str): text to truncate
+
+            Returns:
+                str: truncated text
         """
         max_characters = 35  
         if len(text) > max_characters:
@@ -867,7 +873,7 @@ class SwipeWindow(QMainWindow):
         Handles dislike action, saves and animates dislike swipes.
         """
         self.save_to_disliked()  # saving as disliked
-        self.update_available_recipes()  # updaing recipe queue
+        self.update_available_recipes()  # updating recipe queue
         self.animate_swipe(-800)  # antimating left swipe
         self.check_swipes_count() # checking if model update is needed
 
@@ -892,6 +898,9 @@ class SwipeWindow(QMainWindow):
         """
         Shows preview of recipe details (stats and ingredients) without directions section.
         Creates temporary window with recipe overview.
+
+            Args:
+                recipe_data (dict): dictionary of recipe information
         """
         def back_to_swipe():
             """Returns to main swipe view."""
@@ -967,8 +976,10 @@ class SwipeWindow(QMainWindow):
         self.dataframe = self.dataframe[~self.dataframe['image_filename'].isin(swiped_recipes)].reset_index(drop=True)
 
     def update_swipe_queue(self)-> None:
-        '''Updates the swipe queue based on trained RecipeDataClassification model.
-            Samples 20 random non-selected recipes, then calls PredictionThread to make predictions using most recent trained model.'''
+        '''
+        Updates the swipe queue based on trained RecipeDataClassification model.
+        Samples 20 random non-selected recipes, then calls PredictionThread to make predictions using most recent trained model.
+        '''
         swiped = self.both_likes_dislikes.dropna()
         unswiped_recipes = (shuffle(self.original_dataframe[
             ~self.original_dataframe["image_filename"].isin(swiped["image_filename"])
@@ -999,8 +1010,10 @@ class SwipeWindow(QMainWindow):
         self.update_available_recipes()
 
     def train_model(self):
-        '''Train model based on all current recipes that have been swiped on.
-            Calls TrainingThread to complete model training.'''
+        '''
+        Train model based on all current recipes that have been swiped on.
+        Calls TrainingThread to complete model training.
+        '''
         train_data = self.both_likes_dislikes.dropna()
         train_data = train_data[['directions', 'like_or_dislike']]
         train_data = train_data.rename(columns={'directions': 'text', 'like_or_dislike': 'classification'})
@@ -1017,14 +1030,19 @@ class SwipeWindow(QMainWindow):
             print("Training thread did not start correctly.")
 
     def on_training_done(self) -> None:
-        '''Once training is complete, signify completion and add model to self.model for later.'''
+        '''
+        Once training is complete, signify completion and add model to self.model for later.
+        '''
         print("Model training completed!")
         self.model = self.training_thread.model
 
     def on_predictions_ready(self, ranked_recipes: pd.DataFrame) -> None:
-        '''Prepare predictions to present to the user in descending score order, then add the top 15 predictions to the current list of recipes to present to the user.
+        '''
+        Prepare predictions to present to the user in descending score order, then add the top 15 predictions to the current list of recipes to present to the user.
+            
             Parameters:
-                ranked_recipes (pd.DataFrame): The recipes that have been ranked by the prediction model.'''
+                ranked_recipes (pd.DataFrame): The recipes that have been ranked by the prediction model.
+        '''
         ranked_recipes = ranked_recipes.sort_values("score", ascending=False)
         self.current_index = 0
 
@@ -1034,20 +1052,27 @@ class SwipeWindow(QMainWindow):
         self.update_card_text()
 
 class TrainingThread(QThread):
-    '''New thread to allow swiping actions to take place while model is being trained.'''
+    '''
+    New thread to allow swiping actions to take place while model is being trained.
+    '''
     training_done = pyqtSignal()
 
     def __init__(self, train_data: pd.DataFrame, parent=None) -> None:
-        '''Initialize model with training information.
+        '''
+        Initialize model with training information.
+            
             Parameters:
                 train_data (pd.DataFrame): training data, should be a directions and classification column
-                parent: calls QThread'''
+                parent: calls QThread
+        '''
         super().__init__(parent)
         self.train_data = train_data
         self.model = None
 
     def run(self) -> None:
-        '''Train model and set it as the current model'''
+        '''
+        Train model and set it as the current model
+        '''
         try:
             print('Initializing model...')
             model = RecipeDataClassification(self.train_data, verbose = False)
@@ -1060,21 +1085,28 @@ class TrainingThread(QThread):
             print(f"Error during training: {e}")
 
 class PredictionThread(QThread):
-    '''Prediction thread to allow SwipeWindow to work while predicting.'''
+    '''
+    Prediction thread to allow SwipeWindow to work while predicting.
+    '''
     predictions_ready = pyqtSignal(pd.DataFrame)
 
     def __init__(self, data_to_predict: pd.DataFrame, model: RecipeDataClassification, parent=None) -> None:
-        '''Initialize variables
+        '''
+        Initialize predictions based on last available training model.
+            
             Parameters:
                 data_to_predict (pd.DataFrame): data for model to predict, should be only one column
                 model (RecipeDataClassification): trained model
-                parent: calls QThread'''
+                parent: calls QThread
+        '''
         super().__init__(parent)
         self.recipes = data_to_predict
         self.model = model
 
     def run(self) -> None:
-        '''Run the model and signal completion to the main thread'''
+        '''
+        Run the model and signal completion to the main thread.
+        '''
         try:
             print('Running predictions...')
             predictions = self.model.predict(self.recipes['directions'])
