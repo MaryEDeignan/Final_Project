@@ -27,13 +27,13 @@ deactivate
 
 ### How to view and operate the interface
 #### **Running the Application**
-1. **Clone the Repository:**  *This step can be skipped if you just scraped your own data. Simply navigate to the cloned folder.*
+1. **Clone the Repository:**
    
    First, clone this repository to your local machine:
    ```python
    git clone https://github.com/MaryEDeignan/Final_Project.git
    ``` 
-2. **Run the Application** Execute the Python script to launch the app:
+2. **Run the Application:** Execute the Python script to launch the app:
 	```python 
 	python3 interface.py
 	```
@@ -48,7 +48,7 @@ When the application launches, the interface will display recipe cards that you 
 #### **Liked Recipes:**
 To view all of the recipes you have liked, click the 'Liked Recipes' button at the bottom of the interface. A list will appear with all of the recipes you have liked since you started using the application. You can also click on the recipe titles to view relevant information such as ingredients, directions, and nutrition information.
 
-### 3. **Exiting the Interface** 
+### **Exiting the Interface** 
 When you close the application, it will automatically save your liked and disliked recipes to the `data/preferences.csv` file. This file contains all of the recipes you have swiped on and whether you liked or disliked it. 
 
 ## How to scrape your own data
