@@ -27,13 +27,13 @@ deactivate
 
 ### How to view and operate the interface
 #### **Running the Application**
-1. **Clone the Repository:**  *This step can be skipped if you just scraped your own data. Simply navigate to the cloned folder.*
+1. **Clone the Repository:**
    
    First, clone this repository to your local machine:
    ```python
    git clone https://github.com/MaryEDeignan/Final_Project.git
    ``` 
-2. **Run the Application** Execute the Python script to launch the app:
+2. **Run the Application:** Execute the Python script to launch the app:
 	```python 
 	python3 interface.py
 	```
