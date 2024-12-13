@@ -10,3 +10,6 @@ transformers
 datasets
 torch
 evaluate
+numpy
+torch-geometric
+networkx
