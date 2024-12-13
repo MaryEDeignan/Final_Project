@@ -580,7 +580,7 @@ class SwipeWindow(QMainWindow):
 
         # classification setup: initializing model and swipes_count for testing
         self.swipes_count = 0  
-        self.model = RecipeDataClassification(data = [], use_data = False)
+        self.model = RecipeDataClassification(data = [], use_data = False, verbose = True)
 
         self.update_available_recipes()
 
@@ -859,7 +859,7 @@ class SwipeWindow(QMainWindow):
         if self.swipes_count >= 10:
             self.update_swipe_queue()  # updating recommendations
             self.swipes_count = 0  # resetting counter
-        elif self.swipes_count == 3:
+        elif self.swipes_count == 4:
             self.train_model()   # training on new data
 
     def swipe_left(self)-> None:
@@ -1001,6 +1001,7 @@ class SwipeWindow(QMainWindow):
     def train_model(self):
         '''Train model based on all current recipes that have been swiped on.
             Calls TrainingThread to complete model training.'''
+        print(self.both_likes_dislikes.dropna())
         train_data = self.both_likes_dislikes.dropna()
         train_data = train_data[['directions', 'like_or_dislike']]
         train_data = train_data.rename(columns={'directions': 'text', 'like_or_dislike': 'classification'})
@@ -1046,7 +1047,7 @@ class TrainingThread(QThread):
         '''Train model and set it as the current model'''
         try:
             print('Initializing model...')
-            model = RecipeDataClassification(self.train_data)
+            model = RecipeDataClassification(self.train_data, verbose = False)
             print('Training model...')
             model.train()
             self.model = model

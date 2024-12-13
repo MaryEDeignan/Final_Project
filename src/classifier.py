@@ -38,7 +38,7 @@ class TwoLayerGCN(torch.nn.Module):
         return torch.sigmoid(x)
     
 class RecipeDataClassification:
-    def __init__(self, data, use_data: bool = True, graph_model = None) -> None:
+    def __init__(self, data, use_data: bool = True, graph_model = None, verbose: bool = True) -> None:
         '''Initialize the model.
             
             Parameters:
@@ -47,7 +47,7 @@ class RecipeDataClassification:
                 graph_model (TwoLayerGCN): previously initialized graph model'''
         if use_data:
             data['classification'] = data['classification'].astype(float)
-            self.train_x, self.test_x, self.train_y, self.test_y = train_test_split(data['text'].values, data['classification'].values, test_size = 0.2)
+            self.train_x, self.test_x, self.train_y, self.test_y = train_test_split(data['text'].values, data['classification'].values, test_size = 0.25)
         
         # initialize tokenizers and embedding models for later
         self.tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
@@ -57,6 +57,16 @@ class RecipeDataClassification:
             param.requires_grad = False # efficiency
         
         self.graph_model = graph_model
+        self.verbose = verbose
+    
+    def verbose_print(self, msg: str) -> None:
+        '''Custom conditional print when self.verbose == True
+        
+            Parameters:
+                msg (str): message to print'''
+        if self.verbose:
+            print(msg)
+        return
     
     def l2_distance(self, v1: np.array, v2: np.array) -> np.ndarray:
         '''Calculate the l2 distance of two vectors
@@ -76,7 +86,7 @@ class RecipeDataClassification:
             
             Output:
                 np.ndarray: array of embeddings'''
-        print('Getting embeddings...')
+        
         embeddings = []
         
         for text in x:
@@ -108,7 +118,7 @@ class RecipeDataClassification:
         for i in range(len(embeddings)):
             G.add_node(i, embedding = embeddings[i], label = y[i])
         
-        print('Calculating similarity...')
+        self.verbose_print('Calculating similarity...')
         # add edges between similar embeddings
         for i in range(len(embeddings)):
             for j in range(i+1, len(embeddings)):
@@ -134,20 +144,20 @@ class RecipeDataClassification:
         
             Parameters:
                 prediction_threshold (float): where the model should count a prediction as a like or dislike'''
-        print('Getting graph networks...')
+        self.verbose_print('Getting graph networks...')
         train_graph = self.create_network(self.train_x, self.train_y)
-        print('Train network complete...')
+        self.verbose_print('Train network complete...')
         test_graph = self.create_network(self.test_x, self.test_y)
-        print('Test network complete...')
+        self.verbose_print('Test network complete...')
 
         input_dim = train_graph.x.shape[1]
         hidden_dim = 64
 
-        print('Initializing model...')
+        self.verbose_print('Initializing model...')
         model = TwoLayerGCN(input_dim, hidden_dim)
         optimizer = torch.optim.Adam(model.parameters(), lr = 0.01)
 
-        print('Training model...')
+        self.verbose_print('Training model...')
         model.train()
         accuracy_best = 0
         training_history = {'error': [], 'accuracy': []}
@@ -200,11 +210,11 @@ class RecipeDataClassification:
                 raise ValueError('No trained model available, run train() first.')
             trained_model = self.graph_model
 
-        print('Setting trained_model...')
+        self.verbose_print('Setting trained_model...')
         trained_model.eval()
         predict_graph = self.create_network(x, np.zeros(len(x))) # makes prediction where all ys are zeros, then makes predictions based only on x and edge_index
 
-        print('Making predictions...')
+        self.verbose_print('Making predictions...')
         with torch.no_grad():
             predictions = trained_model(predict_graph.x, predict_graph.edge_index).numpy()
         
