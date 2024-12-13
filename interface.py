@@ -1001,7 +1001,6 @@ class SwipeWindow(QMainWindow):
     def train_model(self):
         '''Train model based on all current recipes that have been swiped on.
             Calls TrainingThread to complete model training.'''
-        print(self.both_likes_dislikes.dropna())
         train_data = self.both_likes_dislikes.dropna()
         train_data = train_data[['directions', 'like_or_dislike']]
         train_data = train_data.rename(columns={'directions': 'text', 'like_or_dislike': 'classification'})
