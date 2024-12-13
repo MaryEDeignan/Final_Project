@@ -1,4 +1,4 @@
-# Recipe Swiper
+# Snackr
 
 ## Project Description
 
