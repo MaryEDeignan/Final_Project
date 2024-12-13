@@ -578,6 +578,7 @@ class SwipeWindow(QMainWindow):
         self.liked = pd.DataFrame(columns=dataframe.columns)
         self.disliked = pd.DataFrame(columns=dataframe.columns)
 
+        # classification setup: initializing model and swipes_count for testing
         self.swipes_count = 0  
         self.model = RecipeDataClassification(data = [], use_data = False)
 
@@ -1011,12 +1012,12 @@ class SwipeWindow(QMainWindow):
         if not self.training_thread.isRunning():
             print("Training thread did not start correctly.")
 
-    def on_training_done(self):
+    def on_training_done(self) -> None:
         '''Once training is complete, signify completion and add model to self.model for later.'''
         print("Model training completed!")
         self.model = self.training_thread.model
 
-    def on_predictions_ready(self, ranked_recipes: pd.DataFrame):
+    def on_predictions_ready(self, ranked_recipes: pd.DataFrame) -> None:
         '''Prepare predictions to present to the user in descending score order, then add the top 15 predictions to the current list of recipes to present to the user.
             Parameters:
                 ranked_recipes (pd.DataFrame): The recipes that have been ranked by the prediction model.'''
@@ -1030,7 +1031,7 @@ class TrainingThread(QThread):
     '''New thread to allow swiping actions to take place while model is being trained.'''
     training_done = pyqtSignal()
 
-    def __init__(self, train_data: pd.DataFrame, parent=None):
+    def __init__(self, train_data: pd.DataFrame, parent=None) -> None:
         '''Initialize model with training information.
             Parameters:
                 train_data (pd.DataFrame): training data, should be a directions and classification column
@@ -1039,7 +1040,7 @@ class TrainingThread(QThread):
         self.train_data = train_data
         self.model = None
 
-    def run(self):
+    def run(self) -> None:
         '''Train model and set it as the current model'''
         try:
             print('Initializing model...')
@@ -1056,7 +1057,7 @@ class PredictionThread(QThread):
     '''Prediction thread to allow SwipeWindow to work while predicting.'''
     predictions_ready = pyqtSignal(pd.DataFrame)
 
-    def __init__(self, data_to_predict: pd.DataFrame, model: RecipeDataClassification, parent=None):
+    def __init__(self, data_to_predict: pd.DataFrame, model: RecipeDataClassification, parent=None) -> None:
         '''Initialize variables
             Parameters:
                 data_to_predict (pd.DataFrame): data for model to predict, should be only one column
@@ -1066,7 +1067,7 @@ class PredictionThread(QThread):
         self.recipes = data_to_predict
         self.model = model
 
-    def run(self):
+    def run(self) -> None:
         '''Run the model and signal completion to the main thread'''
         try:
             print('Running predictions...')
