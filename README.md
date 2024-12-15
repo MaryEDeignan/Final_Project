@@ -2,7 +2,7 @@
 
 ## Project Description
 
-A more complete project description can be found  <a href="docs/Al_and_Mary_Snackr.pdf">here</a> (our project proposal).
+A more complete project description can be found  <a href="docs/Al_and_Mary_Snackr.pdf">here</a> (our project writeup).
 
 ## Getting Started
 ### Setting up the Virtual Environment
