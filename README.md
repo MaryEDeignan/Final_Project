@@ -84,3 +84,6 @@ This jupyter notebook shows how we made all of our feature modifications. Some m
 
 ### `report.ipynb`
 This file is an initial exploration of some of our data, and avenues for measures of similarity.
+
+### `figures.ipynb`
+This file contains some visualizations of the recommendation system in action.
