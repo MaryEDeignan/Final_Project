@@ -58,6 +58,11 @@ class RecipeDataClassification:
         
         self.graph_model = graph_model
         self.verbose = verbose
+
+        self.train_representation = None
+        self.test_representation = None
+        self.predictions_representation = None
+        self.training_history = None
     
     def verbose_print(self, msg: str) -> None:
         '''Custom conditional print when self.verbose == True
@@ -69,13 +74,13 @@ class RecipeDataClassification:
         return
     
     def l2_distance(self, v1: np.array, v2: np.array) -> np.ndarray:
-        '''Calculate the l2 distance of two vectors
+        '''Calculate the Euclidean distance of two vectors
             
             Parameters:
                 v1, v2 (np.array): numpy arrays of the two embeddings
             
             Output:
-                np.ndarray: calculated cosine similarity'''
+                np.ndarray: calculated Euclidean distance'''
         return np.linalg.norm(v1-v2)
     
     def create_embeddings(self, x: pd.Series) -> np.ndarray:
@@ -123,14 +128,14 @@ class RecipeDataClassification:
         for i in range(len(embeddings)):
             for j in range(i+1, len(embeddings)):
                 similarity = self.l2_distance(embeddings[i], embeddings[j])
-                if similarity > 0.7:
+                if similarity < 2:
                     G.add_edge(i, j, weight = similarity)
         
         if len(G.nodes) == 0:
             x_input = torch.tensor(embeddings, dtype = torch.float32)
             edge_index = torch.empty((2, 0), dtype = torch.long)
             y_input = torch.tensor(y, dtype = torch.float32)
-        else:
+        else: 
             node_embeddings = np.array([G.nodes[n]['embedding'] for n in G.nodes])
             x_input = torch.tensor(node_embeddings, dtype = torch.float32)
             edges = list(G.edges)
@@ -146,8 +151,10 @@ class RecipeDataClassification:
                 prediction_threshold (float): where the model should count a prediction as a like or dislike'''
         self.verbose_print('Getting graph networks...')
         train_graph = self.create_network(self.train_x, self.train_y)
+        self.train_representation = train_graph
         self.verbose_print('Train network complete...')
         test_graph = self.create_network(self.test_x, self.test_y)
+        self.test_representation = test_graph
         self.verbose_print('Test network complete...')
 
         input_dim = train_graph.x.shape[1]
@@ -195,6 +202,7 @@ class RecipeDataClassification:
         model.load_state_dict(best_model)
         self.graph_model = model
         
+        self.most_recent_training_history = training_history
         return model, {'train_error': loss.item(), 'test_accuracy': accuracy_best.item(), 'training_history': training_history}
     
     def predict(self, x: pd.Series, trained_model = None) -> np.ndarray:
@@ -213,6 +221,7 @@ class RecipeDataClassification:
         self.verbose_print('Setting trained_model...')
         trained_model.eval()
         predict_graph = self.create_network(x, np.zeros(len(x))) # makes prediction where all ys are zeros, then makes predictions based only on x and edge_index
+        self.predictions_representation = predict_graph
 
         self.verbose_print('Making predictions...')
         with torch.no_grad():
